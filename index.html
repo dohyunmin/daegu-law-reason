@@ -1748,9 +1748,11 @@ async function doSearch() {
 // 처음 화면 세팅
 // 모두가 키 입력 없이 쓰게 하려면 아래 key에 내 VWorld 인증키를 붙여 넣고, domain은 키 발급 때 등록한 서비스 URL의 도메인으로 맞추세요.
 // 주의: 파일을 받은 사람은 누구나 코드에서 이 키를 볼 수 있어요(무료 키라 요금은 안 나오지만 호출량 제한·키 정지는 가능). 키는 발급 때 등록한 도메인에서만 쓰게 하세요.
+// 링크 뒤에 #vw=키&dom=도메인 을 붙여 열면 그 키를 이 브라우저에만 저장해서 씀 (저장소 코드에 키를 넣지 않고 학생에게는 링크로 전달하는 용). 저장 뒤 주소창에서는 지워짐.
+try { const h = new URLSearchParams(location.hash.slice(1)); if (h.get('vw')) { localStorage.setItem('lawTool.vwKey', h.get('vw')); localStorage.setItem('lawTool.vwDom', h.get('dom') || 'localhost'); history.replaceState(null, '', location.pathname + location.search); } } catch (e) {}
 const VW_DEFAULT = { key: '', domain: 'localhost' };
 if (VW_DEFAULT.key) { $('vwKey').value = VW_DEFAULT.key; $('vwDom').value = VW_DEFAULT.domain; show($('vwFields'), false); }
-else try { $('vwKey').value = localStorage.getItem('lawTool.vwKey') || ''; $('vwDom').value = localStorage.getItem('lawTool.vwDom') || 'localhost'; } catch (e) {}
+else try { $('vwKey').value = localStorage.getItem('lawTool.vwKey') || ''; $('vwDom').value = localStorage.getItem('lawTool.vwDom') || 'localhost'; if ($('vwKey').value) show($('vwFields'), false); } catch (e) {}
 $('rhFile').onchange = e => { const file = e.target.files[0]; if (file) loadRh(file); };
 
 // 진행 표시줄: 대지(면적 있음) → 계획 입력(칸이 모두 유효) → 내 설명(적음) → 결과(나옴). 값이 코드로 채워질 때도 있어서 가볍게 주기적으로 갱신
@@ -1774,7 +1776,7 @@ document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
 $('btnInfo').onclick = () => $('dlgInfo').showModal();
 $('btnSum').onclick = () => { renderSummary(); $('dlgSum').showModal(); };
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
-$('btnMapOpen').onclick = openMap; if (VW_DEFAULT.key) openMap(); $('btnParcelUse').onclick = useParcel; $('btnParcelClear').onclick = () => { sel = []; selNote = ''; renderSel(); };
+$('btnMapOpen').onclick = openMap; if ($('vwKey').value) openMap(); $('btnParcelUse').onclick = useParcel; $('btnParcelClear').onclick = () => { sel = []; selNote = ''; renderSel(); };
 $('parcelInfo').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { sel.splice(+b.dataset.rm, 1); renderSel(); } }); $('btnVwSearch').onclick = doSearch;
 $('vwQuery').onkeydown = e => { if (e.key === 'Enter') doSearch(); };
 $('lawList').innerHTML = [
