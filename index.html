@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<title>건축 법규 이유 보기 (학습용 프로토타입)</title>
+<style>
+/* ===== 화면 스타일: 부드러운 지도 앱 UI (learned: behance-property-intelligence-map-ui) =====
+   회색 바탕 위에 둥근 흰 패널이 떠 있는 구조, 검정 버튼 + 알약 칩, 굵은 그로테스크 + 타이트 자간, 색은 의미(통과/걸림·범주)에만.
+   클래스·변수 이름은 JS가 쓰므로 유지(--accent=버튼색). 값은 대부분 스크린샷 눈 추정. */
+:root{--bg:#E9EBEE;--paper:#E9EBEE;--card:#FFFFFF;--card-2:#F6F7F8;--field:#F4F5F6;--ink:#111214;--ink-2:#2A2C30;--muted:#6B7280;--line:#E6E8EB;--line-2:#D5D8DC;
+  --accent:#111214;--pt:#F5A524;--sun:#e07b00;--bad:#C0352B;--ok:#1F7A4D;
+  --r-panel:20px;--r-card:14px;--r-btn:12px;--shadow:0 1px 2px rgba(16,18,20,.04),0 8px 28px rgba(16,18,20,.08);
+  --font:"Pretendard Variable",Pretendard,Inter,"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.6 var(--font);letter-spacing:-.005em;color:var(--ink);background:var(--bg);word-break:keep-all;-webkit-font-smoothing:antialiased}
+main{max-width:none;padding:12px 24px 44px}
+h1,h2,h3{font-family:var(--font);letter-spacing:-.025em}
+h1{font-size:clamp(1.3rem,1.8vw,1.7rem);line-height:1.25;font-weight:700;margin:0}
+h2{font-size:1.1rem;line-height:1.3;font-weight:700;margin:0 0 .6em;display:flex;align-items:center;gap:.55em;flex-wrap:wrap}
+h3{font-size:.98rem;font-weight:650;margin:.8em 0 .3em}
+.step{display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 7px;border-radius:9px;background:var(--ink);color:#fff;font:700 .82rem/1 var(--font);font-style:normal}
+/* 패널·카드 */
+section,.card,details{background:var(--card);border:0;border-radius:var(--r-panel);padding:18px 20px;margin:0 0 12px;box-shadow:var(--shadow)}
+.card{margin:8px 0;background:var(--card-2);border-radius:var(--r-card);box-shadow:none;padding:12px 14px}
+details{padding:0 20px}
+summary{cursor:pointer;font-weight:650;font-size:1rem;padding:15px 0;list-style:none;display:flex;align-items:center;gap:.5em;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+details[open]>summary::after{transform:rotate(-135deg) translateY(-2px)}
+details[open]>summary{border-bottom:1px solid var(--line);margin-bottom:12px}
+details>:last-child{margin-bottom:16px}
+summary small{font-weight:400;color:var(--muted)}
+/* 상단 안내 + 헤더 */
+#top{position:sticky;top:0;z-index:5;background:#FFF6D6;border-bottom:1px solid #F0E2A6;padding:7px 24px;font-size:.88rem;color:#5B4A00;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#top b{color:#3E3200}
+.tbk{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;background:var(--card);border-radius:var(--r-panel);box-shadow:var(--shadow);padding:14px 22px;margin-bottom:12px}
+.tbk-l{min-width:0}
+.tbk h1 em{font-style:normal;background:linear-gradient(transparent 60%,rgba(245,165,36,.4) 60%)}
+.tbk p{margin:2px 0 0;max-width:720px}
+.tbk-art{margin:0;display:flex;align-items:center;gap:12px;color:#8F96A0}
+.tbk-art svg{height:88px;width:auto}
+.tbk-art .label{font:600 .72rem/1.5 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.badge{display:inline-block;background:var(--ink);color:#fff;border-radius:999px;padding:2px 11px;font:600 .74rem/1.6 var(--font);letter-spacing:0;margin-right:6px;vertical-align:middle}
+#top .badge{margin-left:2px}
+.badge.gray{background:var(--field);color:var(--muted)}
+/* 폼 */
+label{display:block;font-weight:600;font-size:.86rem;color:var(--ink-2);margin:.55em 0 .2em}
+input,select,textarea,button{font:inherit;padding:8px 12px;border:1px solid transparent;border-radius:var(--r-btn);max-width:100%;background:var(--field);color:var(--ink)}
+input[type=number],input[type=text],select{width:100%}
+input:hover,select:hover,textarea:hover{border-color:var(--line-2)}
+input[type=file]{width:100%;background:var(--field);padding:7px 10px}
+input[type=file]::file-selector-button{border:1px solid var(--line-2);background:#fff;border-radius:9px;padding:5px 12px;margin-right:10px;font:600 .85rem var(--font);cursor:pointer}
+input[type=radio],input[type=checkbox]{width:auto;transform:scale(1.25);margin:0 6px 0 2px;accent-color:var(--ink)}
+textarea{width:100%;min-height:56px}
+button{background:var(--ink);color:#fff;cursor:pointer;margin:4px 6px 4px 0;min-height:40px;font-weight:600;letter-spacing:-.005em;padding:8px 18px;transition:background .15s,transform .05s}
+button:hover:not(:disabled){background:var(--ink-2)}
+button:active:not(:disabled){transform:translateY(1px)}
+button.sub{background:#fff;color:var(--ink);border-color:var(--line-2)}
+button.sub:hover:not(:disabled){background:var(--field)}
+button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+button:disabled{background:#EEF0F2;color:#A0A6AE;cursor:not-allowed}
+input:disabled,select:disabled{background:#F0F2F4;color:#8A9099}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+input:focus,select:focus,textarea:focus{border-color:var(--ink);background:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0 12px}
+#sec-input .grid .hint:not(:has(input)),.sess .grid .hint{display:none}
+#sec-input .grid>div:focus-within .hint,.sess .grid>div:focus-within .hint{display:block}
+.hint{font-size:.84rem;color:var(--muted);margin:.15em 0;line-height:1.55}
+.warn{background:#FDEEEC;border:1px solid #F3C7C2;color:#7a1510;border-radius:var(--r-card);padding:8px 12px;margin:8px 0}
+.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
+/* 표 */
+.tw{overflow-x:auto;border-radius:var(--r-card);border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{border:0;border-bottom:1px solid var(--line);padding:8px 11px;text-align:right;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+th{background:var(--field);white-space:normal;font-weight:650;font-size:.82rem;color:var(--muted);letter-spacing:0}
+td:first-child,th:first-child{text-align:left}
+tr.fail td{background:#FDEEEC}
+.line{background:var(--card-2);border-left:3px solid var(--pt);padding:9px 14px;margin:8px 0;border-radius:0 var(--r-card) var(--r-card) 0}
+.steps p{margin:.25em 0}.steps b{color:var(--ink);background:linear-gradient(transparent 62%,rgba(245,165,36,.35) 62%)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.two>div{background:var(--card-2);border-radius:var(--r-card);padding:10px 14px;white-space:pre-wrap}
+.legend span{display:inline-block;margin-right:14px;font-size:.88rem}
+.legend i{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-right:5px;border:1px solid #888;border-radius:4px}
+ul.plain{padding-left:1.2em;margin:.3em 0}
+svg{width:100%;min-width:640px;height:auto;background:#fff;border:1px solid var(--line);border-radius:var(--r-card)}
+.leaflet-container svg{width:auto;height:auto;min-width:0;background:none;border:0;border-radius:0}   /* 위의 전역 svg 규칙(흰 배경)이 지도 위 덮개를 흰색으로 만들어 타일을 가리던 문제 */
+#lmap{height:55vh;min-height:320px;border-radius:var(--r-card);overflow:hidden;margin:8px 0;position:relative;z-index:0}
+.leaflet-bar{border:0!important;border-radius:12px!important;box-shadow:0 4px 16px rgba(16,18,20,.18)!important;overflow:hidden}
+.leaflet-bar a{border-bottom-color:var(--line)!important}
+.leaflet-control-layers{border:0!important;border-radius:12px!important;box-shadow:0 4px 16px rgba(16,18,20,.18)!important}
+#cadSvg{min-width:0;height:60vh;min-height:340px;touch-action:none;cursor:crosshair;display:block}
+#north{position:absolute;top:10px;right:12px;text-align:center;font-weight:700;font-size:.8rem;line-height:1.1;pointer-events:none;background:#fffd;border-radius:10px;padding:3px 8px;box-shadow:0 2px 8px rgba(16,18,20,.1)}
+#timer{font-weight:700;color:var(--bad)}
+.hide{display:none!important}
+/* 사용 기록: 한 줄 띠 */
+.sess{display:flex;flex-wrap:wrap;align-items:flex-end;gap:2px 14px;padding:10px 18px}
+.sess h2{margin:0 8px 6px 0;font-size:1rem;align-self:center}
+.sess h2 .hint{display:none}
+.sess .grid{display:contents}
+.sess .grid>div{flex:0 1 190px;min-width:130px}
+.sess label{margin:.1em 0 .15em;font-size:.78rem}
+.sess input,.sess select{padding:5px 10px}
+.sess button{margin:0 4px 2px 0}
+.sess #endForm,.sess #sessMsg{flex-basis:100%}
+/* 열 배치 */
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.colA,.colL,.colR{min-width:0;scrollbar-width:thin}
+.colL>:last-child,.colR>:last-child,.colA>:last-child{margin-bottom:0}
+#sec-mine p{font-size:.86rem;margin:.2em 0}
+.bottom{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px;align-items:start;margin-top:12px}
+.bottom>section{margin:0}
+/* 결과 */
+.glance{container-type:inline-size}
+.glance2{display:grid;gap:12px;margin-top:10px}
+.glance2 h3{margin:.2em 0 .4em}
+#svgBox svg{min-width:0;width:100%;height:auto;max-height:540px}
+#svgBox .tw{overflow:visible;border:0}
+#oneLines .line{margin:8px 0}
+@container (min-width:900px){.glance2{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);align-items:start}}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:6px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:var(--r-card);padding:13px 16px;box-shadow:0 1px 2px rgba(16,18,20,.04)}
+.tile.ok{background:linear-gradient(180deg,#F1FAF5,#fff 70%);border-color:#CFEBDB}
+.tile.bad{background:linear-gradient(180deg,#FFF3F1,#fff 70%);border-color:#F4CBC6}
+.tn{font-size:.82rem;color:var(--muted);font-weight:650;letter-spacing:0;display:flex;align-items:center;gap:7px}
+.tn::before{content:"";width:8px;height:8px;border-radius:50%;background:#9AA0A6}
+.tile.ok .tn::before{background:var(--ok)}.tile.bad .tn::before{background:var(--bad)}
+.tbig{font:700 1.9rem/1.25 var(--font);letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.tile.bad .tbig{color:var(--bad)}.tile.ok .tbig{color:var(--ink)}
+.ts{font-size:.86rem;line-height:1.5;color:var(--ink-2)}
+/* 빈 결과 화면 */
+.empty{display:flex;align-items:center;gap:28px;background:var(--card);border-radius:var(--r-panel);box-shadow:var(--shadow);padding:22px 26px;color:var(--muted)}
+.empty-art{flex:0 0 auto;width:clamp(150px,34%,240px)}
+.empty-art svg{max-height:50vh}
+.empty-tx{flex:1;min-width:0}
+.empty b{display:block;font:700 1.35rem/1.3 var(--font);letter-spacing:-.03em;color:var(--ink);margin-bottom:.2em}
+.empty-tx .label{display:inline-block;margin-top:12px;font:600 .72rem/1.5 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--field);border-radius:999px;padding:2px 10px}
+ol.flow{list-style:none;padding:0;margin:12px 0 0}
+ol.flow li{margin:.55em 0;display:flex;gap:10px;align-items:center;color:var(--ink)}
+ol.flow .step{flex:0 0 auto}
+/* 지도 그래픽 */
+.kr-art,.dg-art{display:block;width:100%;height:auto;min-width:0;background:none;border:0;border-radius:0}
+#kr .kr-prov path{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+#kr .kr-daegu{fill:var(--pt);stroke:var(--pt);stroke-width:2.4}
+#kr .kr-dok{fill:currentColor;r:3.2px}
+#kr .kr-pin{fill:var(--ink);stroke:#fff;stroke-width:2.4;r:9px}
+#kr .kr-ring{fill:none;stroke:var(--pt);stroke-width:2.2;r:21px}
+#mapDG .dg-gu path{fill:var(--field);stroke:#C5CAD0;stroke-width:1.6;stroke-linejoin:round;transition:fill .15s}
+#mapDG .dg-gu path:hover{fill:#FDE3B0}
+#mapDG .dg-lb text{font:600 18px/1 var(--font);text-anchor:middle;fill:#374151;pointer-events:none;paint-order:stroke;stroke:var(--field);stroke-width:4px}
+/* 반응형: 1000~1699px 2열, 1700px↑ 3열(대지·도면 → 계획 입력 → 결과), 그 아래 1열 */
+@media(min-width:1000px) and (max-width:1699px){
+  .cols{grid-template-columns:minmax(440px,5fr) 7fr;grid-template-areas:"L R" "A R";gap:12px}
+  .colL{grid-area:L}.colA{grid-area:A}.colR{grid-area:R;position:sticky;top:46px;max-height:calc(100vh - 54px);overflow:auto}
+}
+@media(min-width:1700px){
+  .cols{grid-template-columns:minmax(480px,1fr) minmax(400px,.85fr) minmax(620px,1.6fr);gap:14px}
+  .colA,.colL,.colR{position:sticky;top:46px;max-height:calc(100vh - 54px);overflow:auto;padding:2px 3px 2px 2px}
+  #sec-input .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #lmap{height:calc(100vh - 470px);min-height:260px}
+  #cadSvg{height:calc(100vh - 400px);min-height:300px}
+}
+@media(max-width:999px){.tbk-art svg{height:60px}.empty{flex-direction:column;text-align:center}main{padding:10px 12px 40px}}
+@media(max-width:600px){th,td{padding:5px 6px;font-size:.8rem}#top{padding:7px 12px}.tbk{padding:12px 16px}}
+
+/* ===== 풀맵: 지도를 화면 전체 배경으로, 그 위에 패널이 떠 있음 + 레퍼런스 범주 색(초록·파랑·주황) =====
+   learned: behance-property-intelligence-map-ui (지도 위 떠 있는 패널, 범주 색). 건폐율=초록, 용적률=파랑, 일조사선=주황 */
+:root{--blue:#1F4FA8;--blue-d:#173E85;--green:#2F6B4F;--orange:#F5A524;--wL:clamp(360px,23vw,470px);--wR:clamp(470px,31vw,700px);--glass:rgba(255,255,255,.93)}
+html,body{height:100%;overflow:hidden}
+body{background:#DDE3EA}
+#lmap{position:fixed;inset:0;z-index:0;height:auto;min-height:0;border-radius:0;margin:0}
+#top{position:fixed;left:0;right:0;top:0;z-index:20;height:34px;padding-top:6px}
+main.app{position:fixed;inset:34px 0 0 0;z-index:5;padding:12px 14px 24px;display:grid;grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-rows:auto minmax(0,1fr);gap:12px;pointer-events:none;max-width:none}
+main.app>*{pointer-events:auto;min-width:0}
+/* 상단 바 */
+.tbk{grid-column:1/-1;grid-row:1;margin:0;padding:8px 16px;border-radius:18px;background:var(--glass);backdrop-filter:blur(14px);display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,520px) minmax(0,1fr);align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{height:46px;width:auto;flex:0 0 auto;color:#8E9BB0}
+.brand h1{font-size:1.25rem}
+.brand p{margin:1px 0 0;font-size:.78rem;line-height:1.4;max-width:620px}
+.search{display:flex;gap:8px;align-items:center}
+.search input{flex:1;background:#fff;border:1px solid var(--line-2);border-radius:999px;padding:9px 18px}
+.search button{margin:0;border-radius:999px;padding:8px 20px}
+.actions{display:flex;gap:8px;justify-content:flex-end}
+.actions button{margin:0}
+/* 패널 */
+.pL,.pR{grid-row:2;overflow:auto;padding:2px 4px 2px 2px;scrollbar-width:thin}
+.pL{grid-column:1}.pR{grid-column:3}
+.pC{grid-column:2;grid-row:2;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:0;pointer-events:none}
+.pC>*{pointer-events:auto}
+.pL section,.pR section,.pR details,.finder,.dock,.empty{background:var(--glass);backdrop-filter:blur(14px)}
+.finder{max-width:540px;align-self:flex-start;margin:0}
+.finder h2{margin-bottom:.4em}
+.finder .hint{margin-top:.5em}
+.dock{width:100%;max-width:780px;align-self:center;margin:0;max-height:58vh;overflow:auto;padding:0 18px}
+.files{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 10px}
+.files label{font-size:.78rem}
+/* 사용 기록: 패널 안 2열 */
+.sess{display:block;padding:12px 16px}
+.sess h2{margin:0 0 4px;font-size:1rem}
+.sess .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.sess .grid>div{min-width:0}
+/* 단계 색 */
+.step.s1{background:var(--blue)}.step.s2{background:var(--green)}.step.s3{background:var(--orange);color:#111214}.step.s4{background:#111214}
+/* 버튼·입력 포인트: 파랑 */
+button{background:var(--blue)}
+button:hover:not(:disabled){background:var(--blue-d)}
+button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,79,168,.15)}
+.badge{background:var(--blue)}
+.badge.gray{background:var(--field);color:var(--muted)}
+.tbk h1 em{background:linear-gradient(transparent 60%,rgba(245,165,36,.55) 60%)}
+.tbk-art{display:none}
+/* 결과 타일: 규정별 범주 색 */
+.tile{border:0;color:#fff;box-shadow:0 6px 18px rgba(16,18,20,.16)}
+.tile.k-bcr{background:linear-gradient(135deg,#2F6B4F,#3B805F)}
+.tile.k-far{background:linear-gradient(135deg,#1F4FA8,#2C63C6)}
+.tile.k-sun{background:linear-gradient(135deg,#F5A524,#F9BE5A);color:#111214}
+.tile.ok,.tile.bad{border:0}
+.tile.bad{box-shadow:0 0 0 3px rgba(192,53,43,.55),0 6px 18px rgba(16,18,20,.16)}
+.tn{color:inherit;justify-content:space-between;font-size:.84rem;opacity:.95}
+.tn::before{display:none}
+.tile .tbig,.tile.bad .tbig,.tile.ok .tbig{color:inherit}
+.tile .ts{color:inherit;opacity:.95}
+.pill{display:inline-block;border-radius:999px;padding:1px 10px;font:700 .72rem/1.6 var(--font);background:#fff;color:var(--ok)}
+.pill.bad{color:var(--bad)}.pill.na{color:var(--muted)}
+/* 빈 결과 화면: 구·군을 범주 색 연한 톤으로 */
+#mapDG .dg-gu path:nth-child(3n+1){fill:#DCEBE2}
+#mapDG .dg-gu path:nth-child(3n+2){fill:#DAE5F8}
+#mapDG .dg-gu path:nth-child(3n){fill:#FDEACB}
+#mapDG .dg-gu path:hover{fill:var(--orange)}
+#mapDG .dg-gu path{stroke:#9CA7B5}
+/* 지도 컨트롤: 패널에 가리지 않게 가운데 영역 안쪽으로 */
+.leaflet-top.leaflet-right{margin-right:calc(var(--wR) + 28px);margin-top:128px}
+.leaflet-bottom.leaflet-right{margin-right:calc(var(--wR) + 28px)}
+.leaflet-bottom{margin-bottom:2px}
+/* 대화창(안내·법조문·자체 점검·기록 요약) */
+dialog{border:0;border-radius:22px;padding:0;width:min(940px,92vw);max-height:86vh;box-shadow:0 24px 80px rgba(16,18,20,.35);color:var(--ink);background:#F2F4F7}
+dialog::backdrop{background:rgba(17,18,20,.45);backdrop-filter:blur(3px)}
+.dlg{padding:16px 18px 18px;overflow:auto;max-height:86vh}
+.dlg-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.dlg-h b{font:700 1.1rem var(--font);letter-spacing:-.025em}
+.dlg section,.dlg details{box-shadow:none;border:1px solid var(--line);background:#fff;backdrop-filter:none}
+.dlg .bottom{margin-top:0}
+/* 좁은 화면(PC 아님): 지도를 위에 두고 패널을 아래로 쌓음 */
+@media(max-width:1179px){
+  html,body{overflow:auto;height:auto}
+  #lmap{position:relative;inset:auto;height:46vh;border-radius:16px;margin:12px 12px 0}
+  #top{position:sticky;height:auto}
+  main.app{position:static;display:block;padding:12px 12px 30px}
+  .tbk{display:block}.brand p{display:none}.search{margin:8px 0}.actions{justify-content:flex-start}
+  .pC{display:block}.finder,.dock{max-width:none;margin:0 0 12px}
+  .pL,.pR{overflow:visible}
+  .leaflet-top.leaflet-right,.leaflet-bottom.leaflet-right{margin-right:0;margin-top:0}
+}
+
+/* 왼쪽 패널 압축: 입력칸 3열, 예시 버튼 한 줄 */
+.pL #sec-input .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pL #sec-input>p{margin:.2em 0 .1em;font-size:.86rem}
+.pL #sec-input>p button.sub{min-height:30px;padding:2px 10px;margin:2px 3px 2px 0}
+.pL section{padding:12px 16px;margin-bottom:10px}
+.pL h2{margin-bottom:.35em}
+.pL label{margin:.4em 0 .12em}
+.pL textarea{min-height:44px}
+
+/* 도면 패널이 위쪽 카드와 겹치지 않게: 공간이 모자라면 줄어듦 */
+.pC{overflow:hidden}
+.dock{flex:0 1 auto;min-height:0;max-height:56vh}
+.dock #cadSvg{height:30vh;min-height:200px}
+.dock .hint{margin:.2em 0}
+
+/* 감각적인 배경: 백지도 + 팔레트 색 빛 번짐, 지적선은 연회색으로 줄임(확대할 때만) */
+.cada-layer{filter:grayscale(1) contrast(1.15)}
+body::before{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(70% 55% at 0% 0%,rgba(31,79,168,.22),transparent 70%),
+             radial-gradient(60% 50% at 100% 100%,rgba(245,165,36,.26),transparent 72%),
+             radial-gradient(55% 45% at 100% 0%,rgba(47,107,79,.14),transparent 70%),
+             radial-gradient(130% 100% at 50% 45%,transparent 55%,rgba(23,62,133,.12) 100%)}
+.leaflet-container{background:#EEF2F7}
+
+/* ===== 유리 + 파스텔 메시 배경 (learned: pinterest-behance-glass-pastel-background) =====
+   배경·일러스트는 직접 그린 그래픽. VWorld 지도는 가운데 지도 카드(대지 선택 기능) 안에서만 사용. */
+:root{--r-panel:26px;--glass:rgba(255,255,255,.62);--glass-strong:rgba(255,255,255,.84);--glass-b:rgba(255,255,255,.88);--shadow-g:0 10px 40px rgba(60,70,140,.14),inset 0 1px 0 rgba(255,255,255,.9)}
+body{background:#EEF1FA}
+body::before{display:none}
+/* 배경 */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.bg .orb{position:absolute;border-radius:50%;filter:blur(84px);opacity:.92}
+.bg .o1{width:46vw;height:46vw;left:-12vw;top:-18vw;background:#A9D4FF}
+.bg .o2{width:40vw;height:40vw;right:-6vw;top:-14vw;background:#D7C2F5}
+.bg .o3{width:46vw;height:46vw;right:-14vw;bottom:-20vw;background:#FFD9BD}
+.bg .o4{width:38vw;height:38vw;left:-8vw;bottom:-18vw;background:#BDEBD6}
+.bg .iso{position:absolute;left:50%;bottom:-6vh;width:min(44vw,720px);transform:translateX(-58%);opacity:.5}
+.bg .iso svg,.bg svg{min-width:0;background:none;border:0;border-radius:0;width:100%;height:auto}
+.bg::after{content:"";position:absolute;inset:0;opacity:.07;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E")}
+/* 유리 패널 */
+.tbk,.pL section,.pR section,.pR details,.empty{background:var(--glass);backdrop-filter:blur(24px) saturate(1.35);-webkit-backdrop-filter:blur(24px) saturate(1.35);border:1px solid var(--glass-b);box-shadow:var(--shadow-g)}
+.finder,.dock{background:var(--glass-strong);backdrop-filter:blur(20px) saturate(1.3);border:1px solid var(--glass-b);box-shadow:0 8px 30px rgba(40,50,110,.18),inset 0 1px 0 rgba(255,255,255,.9)}
+.card{background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7)}
+input,select,textarea{background:rgba(255,255,255,.78);border-color:rgba(120,130,170,.18)}
+input[type=file]{background:rgba(255,255,255,.7)}
+.tbk{border-radius:26px}
+/* 가운데 지도 카드 (대지 선택 기능 전용) */
+.pC{position:relative;display:block;overflow:visible;pointer-events:auto;min-height:0}
+.mapcard{position:absolute;inset:0;border-radius:28px;overflow:hidden;border:1px solid var(--glass-b);box-shadow:var(--shadow-g)}
+.mapcard #lmap{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;border-radius:0;z-index:0}
+.mapcard .finder{position:absolute;top:12px;left:12px;z-index:500;max-width:min(400px,calc(100% - 80px));margin:0;border-radius:22px;padding:14px 16px}
+.mapcard .finder h2{font-size:1rem}
+.mapcard .dock{position:absolute;left:12px;right:12px;bottom:12px;z-index:500;width:auto;max-width:none;margin:0;max-height:62%;border-radius:22px;overflow:auto;padding:0 16px}
+.leaflet-top.leaflet-right{margin-right:12px;margin-top:12px}
+.leaflet-bottom.leaflet-right{margin-right:0}
+.leaflet-bottom.leaflet-left{margin-left:0}
+/* 결과·빈 화면 일러스트 */
+.empty{flex-direction:column;align-items:stretch;gap:6px;text-align:left;padding:18px 24px 20px}
+.empty-art{width:100%;display:grid;place-items:center}
+.empty-art svg{width:min(100%,360px);max-height:36vh;min-width:0;background:none;border:0;border-radius:0}
+.empty-tx{flex:none}
+/* 좁은 화면(PC 아님) 예비 */
+@media(max-width:1179px){
+  .pC{height:66vh;margin:0 0 12px}
+  .mapcard #lmap{position:absolute;inset:0;height:100%;margin:0;border-radius:0}
+  .bg .iso{display:none}
+}
+
+/* 선택한 필지 칩 + 배경 장식(유리 큐브) */
+#parcelInfo .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line-2);border-radius:999px;padding:2px 4px 2px 12px;margin:2px 4px 2px 0;font-size:.84rem;font-weight:600}
+#parcelInfo .chip button.x{min-height:22px;width:22px;padding:0;margin:0;border-radius:50%;background:var(--field);color:var(--ink);font-size:.95rem;line-height:1}
+#parcelInfo .chip button.x:hover:not(:disabled){background:#FFD9D5;color:var(--bad)}
+.bg .deco{position:absolute;right:2.5vw;bottom:3vh;width:min(24vw,430px);opacity:.95}
+.bg .deco svg{width:100%;height:auto;min-width:0;background:none;border:0;border-radius:0}
+
+/* 순서: 1 지도(대지) → 2 계획 입력·3 설명 → 4 결과 (왼쪽 → 오른쪽) */
+main.app{grid-template-columns:minmax(0,1fr) var(--wL) var(--wR)}
+.pC{grid-column:1;grid-row:2}
+.pL{grid-column:2}
+.pR{grid-column:3}
+@media(max-width:1179px){
+  main.app{display:flex;flex-direction:column}
+  .tbk{order:0}.pC{order:1}.pL{order:2}.pR{order:3}
+}
+.bg .iso{display:none}
+
+/* 필지 카드와 도면 패널이 서로 가리지 않게 높이를 나눠 쓰고 각자 안에서 스크롤 */
+.mapcard .finder{max-height:calc(50% - 18px);overflow:auto}
+.mapcard .dock{max-height:calc(50% - 18px)}
+.dock #cadSvg{height:26vh;min-height:170px}
+.bg .deco{opacity:.8}
+
+/* 순서: 입력(왼쪽) → 지도(가운데) → 결과(오른쪽). 단계는 맨 위 진행 표시줄로 표시 */
+main.app{grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-rows:auto auto minmax(0,1fr)}
+.tbk{grid-row:1}
+.stepper{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--glass-b);box-shadow:var(--shadow-g)}
+.stepper .st{display:inline-flex;align-items:center;gap:8px;min-height:34px;margin:0;padding:2px 14px 2px 4px;border-radius:999px;background:transparent;color:var(--muted);font-weight:650;font-size:.9rem;border:0}
+.stepper .st:hover:not(:disabled){background:rgba(255,255,255,.7);color:var(--ink)}
+.stepper .st i{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#E3E7EF;color:var(--muted);font:700 .8rem/1 var(--font);font-style:normal}
+.stepper .st.on{color:var(--ink)}
+.stepper .st.on i{background:var(--blue);color:#fff;box-shadow:0 0 0 4px rgba(31,79,168,.16)}
+.stepper .st.done i{background:var(--green);color:#fff;font-size:0}
+.stepper .st.done i::before{content:"✓";font-size:.85rem}
+.stepper .st.done{color:var(--ink-2)}
+.stepper .bar{flex:1 1 24px;max-width:120px;height:2px;border-radius:2px;background:#D5DAE6}
+.pL{grid-column:1;grid-row:3}
+.pC{grid-column:2;grid-row:3}
+.pR{grid-column:3;grid-row:3}
+/* 찾기 카드 탭 */
+.tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tab{background:rgba(255,255,255,.7);color:var(--ink);border:1px solid var(--line-2);border-radius:999px;min-height:34px;padding:4px 14px;margin:0;font-size:.88rem;font-weight:650}
+.tab:hover:not(:disabled){background:#fff}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tabs .badge{margin-left:auto}
+.finder .files{grid-template-columns:1fr}
+.dock.idle{display:none}
+@media(max-width:1179px){
+  main.app{display:flex;flex-direction:column}
+  .tbk{order:0}.stepper{order:1;overflow:auto}.pC{order:2}.pL{order:3}.pR{order:4}
+  .stepper .st span{white-space:nowrap}
+}
+
+/* 도면 패널: 제목 줄을 항상 위에 붙여 두고(스크롤해도 보임), 누르면 접혀서 지도가 드러남 */
+.dock>summary{position:sticky;top:0;z-index:5;background:var(--glass-strong);border-radius:22px 22px 0 0;padding-right:4px}
+.dock>summary .fold-hint{font:500 .74rem/1 var(--font);color:var(--muted);background:var(--field);border-radius:999px;padding:4px 10px;margin-left:6px}
+.dock:not([open]){padding-bottom:0}
+.dock:not([open])>summary{border-radius:22px}
+
+/* 솔리드 레이어 목록 */
+#layerBox{margin-top:8px}
+.layers{max-height:150px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px 8px;background:rgba(255,255,255,.6);margin:6px 0}
+.lay{display:flex;align-items:center;gap:8px;margin:2px 0;font-weight:500;font-size:.8rem}
+.lay span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lay small{color:var(--muted)}
+.fitNote b{color:var(--blue)}
+
+.dock>summary{background:#fff}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="kr" viewBox="0 0 379 353"><g class="kr-prov"><path d="M131.5,62.0L135.2,62.7L135.1,65.2L136.0,65.6L136.3,67.9L135.7,70.9L139.3,69.4L139.6,71.6L137.7,73.0L137.5,74.1L138.5,74.4L137.8,75.8L133.1,78.8L132.0,76.5L125.7,78.5L123.9,74.8L121.1,76.0L121.5,71.9L118.6,71.0L120.4,68.0L123.1,69.9L124.2,69.6L125.4,68.8L125.6,65.2L127.8,64.5L128.3,66.4L129.2,66.2L130.0,63.3Z"/><path d="M228.7,226.3L228.5,222.8L227.3,224.8L227.4,222.6L225.5,224.5L225.6,221.9L224.9,224.5L222.7,224.3L221.7,223.4L222.8,222.8L222.6,221.7L220.4,219.6L224.1,219.0L224.5,220.0L224.7,216.4L230.2,215.0L231.4,212.4L236.2,210.5L237.5,207.6L236.7,206.5L239.6,207.6L240.7,205.3L244.0,205.4L244.8,208.2L246.1,209.3L243.9,209.8L242.0,217.9L239.8,219.8L236.7,219.9L236.2,221.2L237.2,222.5L236.2,223.7L233.4,221.6L231.5,226.1L230.9,224.1L231.1,226.4L229.4,225.9L229.0,227.4Z"/><path d="M105.5,72.5L108.6,73.5L109.5,75.1L105.7,76.5L102.4,79.3L98.5,78.0L98.3,76.0L104.1,74.4ZM113.1,65.8L118.0,69.5L120.1,69.3L117.5,73.9L117.5,75.2L119.4,77.2L116.4,81.7L114.6,81.4L113.1,84.1L109.4,84.5L110.2,83.9L109.5,83.4L113.1,83.3L110.8,81.4L110.6,79.1L112.2,79.3L110.9,78.7L110.9,77.3L110.1,78.2L109.9,76.8L111.6,77.0L110.1,76.1L111.6,74.9L112.2,75.5L112.3,74.1L110.6,74.7L110.7,71.0L109.1,68.9L111.6,68.0ZM96.8,59.1L96.3,61.2L99.3,63.1L97.4,65.5L96.2,63.1L93.8,61.3L94.7,61.1L94.9,59.2ZM93.6,54.9L96.7,55.4L96.1,57.4L91.9,58.8L90.5,57.8L91.5,55.5ZM102.3,54.3L105.6,56.8L106.7,59.0L106.2,63.6L107.5,67.1L106.4,67.5L106.2,69.4L106.0,68.2L100.6,68.6L98.8,67.4L98.6,66.0L100.9,65.0L99.9,62.3L97.9,61.0L97.8,56.4L99.9,54.4ZM14.4,44.6L16.1,44.5L17.4,45.9L14.6,48.6L12.0,48.1L10.5,45.3Z"/><path d="M118.5,213.5L118.1,214.9L120.7,215.9L124.4,213.8L126.9,213.8L128.8,218.2L130.4,217.7L131.5,218.7L131.0,221.6L128.0,224.9L126.3,223.7L120.7,226.2L118.2,225.8L118.9,225.0L117.0,222.4L113.7,222.9L112.6,220.3L114.0,218.7L113.0,217.5L116.3,216.2L117.2,213.7Z"/><path d="M150.4,137.1L150.9,139.2L153.1,139.5L154.7,137.8L154.4,139.0L155.7,139.4L155.0,140.5L155.6,142.1L156.7,141.1L158.5,142.7L156.7,143.4L156.6,145.4L155.5,146.4L155.0,152.9L152.5,155.3L149.8,152.9L150.0,151.1L148.6,150.7L148.7,153.8L147.2,156.0L146.2,153.7L144.6,152.8L145.0,151.0L142.8,149.4L144.4,146.0L144.6,141.7L147.5,140.7L148.5,137.1Z"/><path d="M238.7,185.0L241.1,184.7L243.6,186.0L243.5,188.5L245.6,189.5L248.5,187.3L253.3,189.0L252.9,190.2L254.0,193.0L253.5,196.7L252.7,196.6L253.2,197.8L252.4,197.7L253.0,198.9L251.1,200.1L249.6,196.0L250.2,198.3L248.9,198.1L250.3,199.7L249.2,201.2L247.3,199.3L249.5,202.7L248.4,202.9L248.9,204.2L248.0,206.0L248.8,207.3L246.4,209.0L244.8,208.2L244.0,205.4L240.8,205.4L241.7,204.1L240.6,202.2L239.0,202.6L236.0,198.6L233.4,197.5L233.5,196.4L230.5,196.7L229.3,194.9L231.9,192.7L231.0,190.7L233.1,189.1L234.8,189.5L234.1,187.8L234.8,186.3L237.9,184.5Z"/><path d="M139.0,122.1L145.7,124.9L144.2,127.7L145.1,128.0L145.4,131.0L147.4,132.5L149.4,132.2L149.7,133.8L150.7,134.1L151.0,136.6L148.5,137.1L148.4,139.1L146.9,141.2L143.0,142.2L140.4,140.1L140.2,137.0L138.9,135.8L139.2,133.8L140.8,131.6L138.2,129.8L138.5,124.6L136.8,123.5Z"/><path d="M117.5,103.0L118.2,102.0L114.1,98.1L114.3,96.5L113.4,96.8L115.2,96.0L112.8,95.8L113.9,93.7L112.8,94.0L113.1,88.7L112.0,87.6L113.4,87.3L111.8,87.7L113.4,87.3L113.4,88.2L114.6,88.0L114.3,89.5L118.2,89.6L119.5,91.2L119.9,88.8L120.9,88.8L120.6,87.2L122.3,88.3L121.2,86.9L118.8,87.3L113.9,85.0L111.2,85.9L109.2,87.2L111.6,89.0L112.4,89.1L111.9,88.0L112.5,88.5L113.0,93.0L111.8,91.9L111.7,92.9L111.5,90.8L109.8,90.9L111.1,92.4L110.1,93.1L110.4,91.7L109.1,91.7L108.5,93.4L107.4,91.2L108.8,90.7L107.0,87.5L108.4,88.2L108.9,86.9L114.9,84.6L117.6,80.7L120.0,81.0L119.8,80.1L119.6,81.1L117.8,80.4L119.4,77.2L117.5,75.2L118.7,71.0L121.5,71.9L121.1,76.0L123.9,74.8L125.5,78.5L126.8,77.5L128.6,78.1L130.6,76.4L132.1,76.6L132.2,78.2L133.7,78.8L138.3,75.1L137.4,73.9L138.6,71.6L139.6,71.6L139.3,69.4L135.7,70.9L136.3,67.9L136.0,65.6L135.1,65.2L135.2,62.7L131.8,61.9L130.0,63.3L129.2,66.2L128.3,66.4L127.8,64.5L125.6,65.2L125.4,68.8L123.1,69.9L120.5,67.9L120.1,69.3L118.0,69.5L113.2,65.8L111.6,68.0L108.3,68.1L106.7,63.6L106.2,57.2L106.5,56.4L110.0,58.2L113.5,57.0L113.3,53.3L115.0,51.6L114.0,51.5L113.9,46.2L121.2,43.2L123.2,41.4L123.5,36.7L125.6,34.9L128.7,34.9L127.9,33.3L129.5,29.3L130.6,29.7L132.5,27.3L135.6,26.0L136.0,28.6L138.6,28.6L139.9,33.4L141.4,34.8L144.6,32.1L145.4,32.5L144.2,35.7L145.9,36.1L146.5,37.5L149.4,36.1L151.1,37.1L152.0,36.2L153.6,42.6L157.5,43.4L157.8,45.4L160.6,46.2L161.3,47.8L160.8,51.1L156.7,54.0L157.4,55.1L156.5,56.3L157.7,58.3L155.8,60.7L158.6,60.8L157.4,65.6L158.5,66.4L160.8,65.1L165.9,69.0L170.2,69.1L173.0,71.3L168.5,74.2L170.6,76.2L170.7,78.8L169.5,82.4L168.5,82.6L169.0,86.4L168.0,87.0L168.0,91.9L165.3,96.7L161.9,95.8L162.2,99.2L160.3,99.9L160.7,101.1L159.4,100.7L158.3,102.8L153.9,102.1L152.8,104.7L150.1,105.6L150.6,107.4L149.3,108.6L145.2,109.7L145.0,112.0L137.7,107.2L136.0,107.2L135.2,109.0L130.2,109.4L125.9,111.5L125.4,109.7L122.9,108.7L121.6,105.9L119.8,105.7L119.3,104.9L120.1,103.8Z"/><path d="M217.0,41.9L224.7,54.0L233.5,63.5L233.0,66.0L236.5,69.5L236.5,72.2L238.2,74.6L237.0,75.0L238.0,74.6L240.1,77.1L240.6,79.6L243.6,81.8L244.3,85.5L247.2,88.0L248.6,90.8L247.9,91.4L247.9,94.6L249.0,96.3L244.3,98.2L242.0,100.8L242.7,103.0L240.0,102.8L239.1,101.1L235.6,99.2L233.6,101.4L226.9,99.7L225.5,102.6L223.1,102.2L222.2,100.5L219.7,99.7L218.5,101.1L218.4,103.7L211.8,100.0L207.6,99.8L205.5,97.6L201.9,99.0L199.8,95.6L197.5,95.6L195.4,97.1L193.8,95.5L195.5,94.8L197.2,92.1L194.0,92.5L191.0,90.0L188.8,92.2L186.9,90.9L186.0,92.6L182.6,93.7L181.5,90.2L179.2,89.5L176.6,91.4L176.9,95.1L170.0,96.5L167.7,92.5L168.6,88.5L168.0,87.0L169.0,86.4L168.5,82.6L169.5,82.4L170.7,78.8L170.6,76.2L168.5,74.2L173.0,71.2L170.2,69.1L165.9,69.0L160.8,65.1L157.9,66.2L157.3,65.1L158.1,64.4L158.5,60.2L155.8,60.5L157.7,58.3L156.5,56.3L157.4,55.1L156.9,53.5L160.8,51.1L161.1,47.1L157.8,45.4L157.5,43.4L153.6,42.6L152.0,36.2L151.1,37.1L149.4,36.1L146.5,37.5L145.9,36.1L144.2,35.7L145.4,32.5L144.6,32.1L141.4,34.8L139.9,33.4L138.6,28.6L136.1,28.7L135.2,26.0L137.0,24.0L138.2,24.6L142.6,22.7L145.4,24.0L149.5,22.5L153.4,23.1L155.3,24.8L159.4,22.5L164.7,23.3L169.7,21.8L171.6,24.6L176.9,24.2L180.7,26.3L181.5,23.9L184.0,24.2L188.5,22.2L194.8,16.4L196.3,11.6L196.1,6.6L198.5,5.4L201.2,8.9L201.7,12.0L204.0,15.5L203.5,16.6L206.2,20.3L208.7,27.4L210.8,30.1L209.8,31.4L210.7,30.9L211.4,32.2L211.2,34.3Z"/><path d="M146.0,122.5L147.4,122.2L147.2,120.8L148.4,120.2L150.7,121.1L151.5,120.2L150.3,118.9L150.5,117.9L147.2,115.9L147.2,114.3L145.8,114.1L145.9,112.5L144.9,112.0L145.2,109.7L149.3,108.6L150.6,107.4L150.1,105.6L152.8,104.7L153.9,102.1L158.3,102.8L159.4,100.7L160.7,101.1L160.3,99.9L162.2,99.2L161.9,95.8L165.0,97.0L167.7,92.1L168.3,94.8L170.0,96.5L174.2,95.2L175.5,96.1L177.2,94.5L176.6,91.4L179.1,89.5L181.5,90.2L182.6,93.7L186.0,92.6L186.9,90.9L188.8,92.2L191.0,90.0L194.0,92.5L197.2,92.1L195.5,94.8L193.8,95.5L195.4,97.1L197.5,95.6L199.8,95.6L201.9,99.0L205.5,97.6L207.6,99.8L211.8,100.0L213.3,101.3L212.3,102.9L211.1,102.1L209.1,103.3L208.4,105.5L202.7,109.9L201.8,113.1L203.1,114.8L201.7,117.1L198.8,117.7L196.4,116.8L192.7,113.3L192.5,115.0L191.2,114.9L191.4,117.1L187.3,115.8L185.1,118.0L183.6,116.8L182.2,121.1L184.1,123.5L178.5,121.7L177.0,124.6L174.3,125.1L177.0,125.9L176.8,130.0L174.5,126.7L172.9,128.1L173.5,129.4L170.5,130.1L170.8,131.4L173.6,132.2L175.9,136.0L174.4,137.1L174.7,141.2L173.7,143.0L175.1,145.1L172.6,148.2L173.2,150.4L174.7,150.4L175.8,148.7L178.6,151.8L181.9,150.8L182.9,151.5L182.1,152.5L183.5,154.9L179.5,155.1L180.4,157.8L178.9,160.1L178.6,163.0L174.4,166.0L173.0,164.9L168.7,166.6L165.6,165.2L164.9,163.5L163.5,165.0L160.0,159.1L160.4,153.9L159.5,153.0L157.8,153.4L157.3,151.8L155.1,152.6L155.5,146.4L156.6,145.4L156.7,143.4L158.5,142.7L156.7,141.1L155.6,142.1L155.0,140.5L155.7,139.4L154.4,139.0L154.7,137.8L153.1,139.5L150.6,139.1L150.7,134.1L149.7,133.8L149.4,132.2L147.4,132.5L145.5,131.1L145.1,128.0L144.2,127.7L145.7,126.0L144.7,124.6Z"/><path d="M99.1,130.4L98.3,131.9L99.1,132.4L99.2,135.2L100.8,136.9L100.6,139.3L101.9,140.3L101.7,142.6L99.8,141.2L98.4,141.6L98.5,140.1L96.8,140.0L97.2,136.1L95.9,131.1L98.3,129.4ZM115.1,105.4L119.5,106.9L121.2,111.8L123.5,112.8L130.2,109.4L135.2,109.0L136.0,107.2L138.4,107.3L144.1,110.9L145.9,112.5L145.8,114.1L147.3,114.4L147.2,115.9L150.5,117.9L151.5,120.4L147.2,120.7L147.6,121.9L144.7,124.6L138.7,121.9L136.8,123.5L138.5,124.6L138.2,129.8L140.8,131.6L139.2,133.8L138.9,135.8L140.2,137.0L140.4,140.1L143.0,142.2L144.6,141.7L144.4,146.0L142.8,149.4L145.0,151.0L144.6,152.8L146.2,153.7L147.1,156.0L148.7,153.8L149.1,150.5L150.0,151.1L149.8,152.9L152.5,155.3L157.1,151.8L157.8,153.4L159.5,153.0L160.4,153.9L160.0,159.1L162.4,163.2L161.5,163.4L161.5,165.0L162.5,165.4L161.0,165.8L161.2,167.3L157.2,164.9L157.3,167.6L155.9,168.7L153.3,168.4L152.2,165.6L150.4,166.8L148.5,164.0L147.4,159.3L143.1,160.4L142.9,162.2L140.7,161.2L140.3,162.1L137.4,162.0L136.6,163.5L133.5,161.9L132.7,158.3L128.2,157.7L124.8,158.8L123.7,163.6L117.8,165.8L117.2,167.4L113.8,167.1L113.8,165.5L111.3,162.6L112.6,161.6L110.9,161.5L108.8,158.7L108.1,159.4L106.1,158.0L105.8,159.4L105.0,159.1L105.0,157.6L106.6,156.9L106.8,152.6L107.7,151.0L105.6,146.9L108.3,145.6L105.7,143.4L104.3,143.5L105.1,141.0L106.9,140.1L105.2,140.6L104.7,139.2L104.7,134.8L103.6,134.2L103.5,131.2L98.6,128.5L94.9,131.1L94.5,128.8L95.4,127.8L93.4,124.4L94.3,122.1L92.0,122.9L92.2,123.8L90.1,125.6L88.1,125.4L87.6,123.8L88.6,123.0L90.7,123.7L91.4,122.6L90.2,122.7L90.9,121.5L88.6,120.4L87.3,120.6L87.8,122.1L86.3,123.5L87.0,121.0L85.9,119.5L87.6,118.4L88.3,116.2L87.8,114.9L89.6,116.9L89.1,115.8L90.2,114.3L89.1,112.6L90.4,111.3L94.9,111.5L94.5,107.7L95.4,106.8L95.3,110.4L96.8,112.2L95.1,114.5L96.2,115.5L94.4,116.2L94.7,117.8L97.2,116.8L96.2,115.1L96.9,113.9L98.6,116.0L98.5,113.1L101.9,111.5L100.6,110.4L101.3,109.3L99.8,109.9L97.0,107.8L97.0,107.0L99.7,107.3L96.8,106.3L96.7,105.4L98.2,104.7L101.4,104.2L103.0,105.5L105.3,101.4L111.9,105.3Z"/><path d="M130.2,158.3L132.7,158.3L133.5,161.9L136.6,163.5L137.4,162.0L140.3,162.1L140.7,161.2L142.9,162.2L143.1,160.4L147.4,159.3L149.3,166.0L150.5,166.9L152.2,165.6L153.3,168.4L154.9,168.7L157.3,167.7L157.1,164.9L160.0,165.8L161.2,167.4L161.0,165.8L162.5,165.4L161.5,165.0L161.7,163.2L163.7,165.1L165.0,163.5L165.6,165.2L168.7,166.6L173.0,164.9L174.4,166.0L176.1,170.6L174.7,171.8L174.9,172.9L173.5,173.2L172.6,175.7L167.8,177.0L166.5,180.0L163.7,182.0L163.6,185.4L161.5,189.3L162.3,191.1L159.7,195.1L161.9,196.2L163.2,199.2L162.3,200.9L164.2,201.8L161.0,206.6L161.7,208.2L160.7,209.7L159.4,210.2L154.0,206.7L152.0,207.2L149.7,210.6L148.2,209.4L146.0,210.5L143.3,210.0L141.6,208.6L140.6,209.8L139.8,208.5L135.7,210.8L132.6,209.4L133.9,208.3L134.0,206.8L131.8,204.9L133.0,203.0L132.2,200.5L130.4,200.7L129.0,202.9L129.2,204.6L127.2,204.9L125.2,201.6L122.4,200.7L121.6,199.2L121.1,200.3L117.3,201.5L118.1,203.6L116.5,204.6L116.5,206.7L114.6,208.1L113.7,207.6L112.6,209.6L109.6,208.9L109.6,210.8L106.9,210.3L106.0,207.0L105.0,207.7L105.2,206.3L104.2,205.5L105.0,204.0L104.3,203.0L101.8,202.6L104.6,197.0L105.2,197.8L108.3,195.7L110.1,196.6L112.0,193.8L114.2,195.4L113.2,193.0L105.8,193.5L103.3,191.6L103.2,189.9L108.2,186.1L106.3,184.0L104.4,178.9L106.3,183.6L108.8,186.8L111.8,183.0L111.9,179.8L115.7,180.0L114.1,174.3L111.0,174.5L111.2,171.1L110.0,170.6L109.8,173.4L109.1,173.4L109.7,172.3L108.6,173.3L108.6,171.4L107.1,171.5L105.3,177.6L102.8,179.4L102.4,178.0L104.1,178.4L104.9,177.4L106.9,171.6L106.0,169.0L117.2,168.3L117.8,165.8L123.8,163.5L124.9,158.7L128.2,157.7Z"/><path d="M115.1,266.7L116.8,267.8L119.3,273.6L117.1,272.5L117.3,273.6L115.1,273.3L112.6,271.1L112.3,267.7ZM122.0,264.3L122.6,265.3L121.6,265.4L122.9,265.5L123.7,267.2L120.0,267.7L119.4,269.5L118.8,269.2L119.3,267.7L117.9,267.8L119.1,265.2ZM141.3,260.7L142.2,261.9L140.9,264.8L137.5,265.3L136.2,263.6L135.4,263.9L135.1,262.2L136.5,261.0L137.5,262.1ZM92.9,255.2L95.5,256.0L96.0,257.7L97.3,257.2L99.2,259.6L99.6,261.6L98.2,261.6L98.6,263.9L96.8,267.0L96.3,265.1L96.0,266.6L94.9,266.0L95.8,267.7L94.7,268.8L94.9,267.1L93.6,266.8L93.7,268.0L90.4,268.4L91.0,269.1L89.3,269.8L88.3,268.8L86.8,269.1L87.4,267.5L86.0,267.8L84.7,265.5L85.1,264.4L86.7,263.9L86.1,262.9L88.9,261.3L89.8,259.5L89.7,260.6L90.5,260.7L90.2,259.8L91.5,259.4L90.9,258.7L92.1,258.1L92.8,256.5L92.2,255.2ZM169.9,247.3L170.0,248.0L168.5,247.8L170.9,250.4L169.9,253.8L170.9,254.4L170.0,255.1L166.1,252.9L166.8,251.9L166.1,251.5L168.7,248.8L167.4,246.1ZM78.8,246.4L80.9,247.8L80.6,248.9L78.5,250.7L78.0,249.7L76.3,249.8L76.0,247.3L77.6,247.1L78.3,245.7ZM85.5,243.9L89.0,244.7L89.0,247.9L87.6,247.9L87.1,246.2L84.0,247.4L84.4,244.9L83.5,243.7ZM79.9,241.4L80.2,244.2L76.8,244.6L77.7,245.9L77.1,246.7L74.9,246.3L75.2,243.0L77.1,243.2ZM86.1,236.7L88.1,237.7L86.9,238.1L87.7,239.3L86.3,239.7L86.2,241.8L85.0,242.0L84.3,240.6L84.0,242.1L82.4,240.2L84.3,240.6L83.2,238.8L86.0,238.7ZM95.0,238.7L91.6,238.7L91.9,237.8L94.3,237.9L94.4,236.4L95.5,236.4L94.3,235.0L95.3,234.2L97.8,235.7L96.0,237.7L98.2,237.9L99.0,239.8L97.8,241.0L96.7,240.4L97.6,239.6L97.0,238.8ZM83.4,233.6L85.2,235.0L84.5,237.8L82.4,239.0L81.5,237.3L80.7,238.1L78.6,237.3L80.9,234.9L83.0,234.8ZM83.0,224.7L82.7,223.0L84.3,222.7L86.0,220.5L88.5,220.4L86.5,221.0L86.5,224.3L85.4,223.9L86.4,224.6L85.3,226.4L84.1,225.1L83.4,226.0L82.2,225.3ZM124.9,263.1L123.9,263.2L124.6,265.2L120.7,263.2L120.8,262.4L119.8,262.8L120.2,257.5L119.3,253.4L118.7,260.4L117.3,261.2L118.1,262.1L114.2,265.6L113.6,264.9L111.2,266.5L110.6,271.9L108.3,271.4L106.4,273.2L106.3,269.0L104.1,269.8L103.6,268.9L104.7,268.8L103.9,267.5L105.2,267.5L104.7,266.1L106.2,265.7L105.7,264.1L104.4,265.0L103.1,263.6L104.2,263.5L103.1,261.8L103.9,260.0L102.4,259.0L103.4,258.4L101.1,256.8L99.6,258.4L99.5,256.6L96.0,256.2L95.9,255.0L93.2,253.4L95.0,252.4L93.3,251.7L93.1,250.2L94.6,244.4L96.9,245.5L98.2,248.4L99.8,246.1L98.3,245.4L99.4,243.7L102.8,242.9L102.4,241.8L99.4,243.1L97.8,242.0L100.9,239.1L100.4,236.8L99.6,237.0L100.6,234.9L99.0,229.5L98.3,231.4L98.7,234.4L95.6,233.9L96.4,232.9L95.1,231.5L96.0,230.1L96.7,231.5L98.2,230.4L96.9,229.8L99.8,227.9L99.4,226.4L98.0,227.0L96.3,223.9L95.5,226.6L94.6,225.6L93.3,226.1L94.0,227.3L92.8,228.7L92.5,227.7L91.7,228.2L91.9,226.1L88.4,225.3L88.1,223.8L89.8,222.4L93.3,223.6L92.5,222.5L93.2,220.5L96.3,221.5L97.6,219.5L96.9,223.6L98.0,223.2L97.5,224.6L98.6,224.5L98.8,225.6L99.9,224.1L99.5,225.3L100.8,225.5L99.8,226.7L101.7,227.7L101.3,226.7L103.2,224.8L102.1,224.0L103.6,223.2L101.4,222.8L98.3,218.9L99.2,216.3L97.2,217.6L97.4,216.1L96.4,216.8L95.1,215.6L97.7,212.4L96.8,212.0L98.9,211.8L100.2,206.5L102.7,207.8L100.7,205.7L100.8,202.6L104.1,202.8L105.0,204.0L104.2,205.5L105.2,206.3L105.0,207.7L106.0,207.0L106.6,209.9L109.6,210.8L109.6,208.9L112.6,209.6L113.7,207.6L114.6,208.1L116.5,206.7L116.5,204.6L118.1,203.6L117.3,201.5L121.1,200.3L121.6,199.2L122.4,200.7L125.2,201.6L127.2,204.9L129.2,204.6L129.0,202.9L130.4,200.7L132.2,200.5L133.0,203.0L131.8,204.9L134.0,206.8L133.9,208.3L132.6,209.4L135.7,210.8L139.8,208.5L140.6,209.8L141.6,208.6L143.3,210.0L146.0,210.5L148.2,209.4L149.7,210.6L152.0,207.2L154.0,206.7L158.9,209.7L161.3,213.9L161.4,217.6L169.9,228.3L168.2,231.8L169.0,233.5L167.8,233.4L168.1,231.8L167.1,232.2L165.3,234.4L164.1,233.6L164.1,235.4L162.5,236.6L161.7,235.5L163.3,235.0L159.4,234.4L161.2,235.9L160.0,237.2L162.3,238.9L162.3,240.1L165.3,237.8L169.2,238.0L169.0,241.6L167.8,243.2L168.3,245.6L165.4,246.7L163.4,244.6L162.7,247.6L161.8,246.9L161.2,247.6L162.5,249.0L161.4,249.1L162.8,252.4L159.7,251.0L159.6,252.3L158.0,249.1L158.5,248.0L159.6,248.4L157.9,247.2L160.2,245.0L158.5,243.2L158.4,241.4L156.7,241.2L157.6,239.1L156.8,239.0L156.4,236.9L155.0,237.2L154.8,239.2L152.4,238.9L150.5,240.2L148.2,239.3L150.1,240.9L151.8,240.9L150.0,242.3L150.6,243.8L149.1,245.4L151.9,249.6L155.0,251.1L153.4,251.4L155.3,252.2L155.8,254.0L154.9,255.8L153.4,254.7L152.7,255.6L150.2,255.0L150.9,255.5L150.3,256.7L152.4,257.4L152.0,259.6L149.3,260.2L149.8,261.4L147.5,261.1L146.3,262.7L147.5,263.6L146.5,264.0L143.8,261.5L144.6,260.6L143.2,259.1L136.5,258.5L136.1,256.7L137.9,254.2L139.0,254.6L140.2,251.0L141.8,250.8L143.0,247.3L144.5,246.9L144.3,249.6L146.2,250.2L147.7,247.4L146.8,244.8L143.7,246.0L142.5,244.3L139.7,248.3L136.6,247.9L132.7,252.0L128.3,252.3L130.9,253.7L129.4,255.8L130.8,256.1L128.6,260.6L129.3,262.2L127.6,261.5L127.3,263.7Z"/><path d="M251.8,112.1L254.7,119.8L254.7,122.3L254.1,125.3L252.7,125.8L251.4,128.8L251.4,131.1L253.5,135.9L249.5,149.5L250.1,153.9L249.4,155.2L250.5,156.2L250.7,159.1L252.8,161.4L249.4,164.3L250.1,165.6L252.4,165.5L250.6,166.3L252.0,166.0L251.5,167.1L253.4,167.9L258.6,162.1L260.0,166.4L256.8,171.8L257.5,173.6L256.8,175.2L257.5,175.6L253.3,189.0L248.5,187.3L245.6,189.5L243.5,188.5L243.6,186.0L238.0,184.5L234.6,186.4L234.1,188.4L234.8,189.5L233.1,189.1L230.1,191.6L226.5,189.7L224.6,190.1L222.9,192.8L220.8,192.9L220.0,194.3L215.8,193.6L215.1,192.5L209.9,193.0L207.5,190.7L207.1,185.2L209.7,183.6L211.3,183.6L211.7,185.8L214.8,184.7L215.5,182.5L214.8,180.4L216.6,179.4L216.8,176.3L218.7,175.7L218.7,173.2L217.5,171.8L218.0,169.1L215.5,166.4L211.6,167.0L208.3,169.8L207.1,168.6L207.4,171.4L205.7,174.4L204.1,173.6L204.5,171.5L203.4,170.9L200.6,173.6L199.8,176.5L203.1,176.9L204.8,178.7L201.7,179.2L199.8,182.3L202.2,184.4L202.2,185.7L198.2,185.8L200.7,189.8L199.2,191.5L198.2,189.4L195.9,188.8L193.7,189.6L192.7,188.8L192.1,189.8L188.7,188.9L188.8,187.7L190.8,187.0L190.7,184.8L188.5,180.8L187.0,180.5L186.7,178.4L184.1,177.2L181.1,178.0L179.7,176.2L176.8,176.4L176.6,174.0L174.8,174.0L174.7,171.8L176.1,170.6L174.3,167.6L174.4,166.0L178.6,163.0L178.9,160.1L180.4,157.8L179.5,155.1L183.5,154.9L182.1,152.5L182.9,151.5L181.9,150.8L178.6,151.8L175.8,148.7L174.7,150.4L173.2,150.4L172.6,148.2L175.1,145.1L173.7,143.0L174.7,141.2L174.4,137.1L175.9,136.0L173.6,132.2L170.3,130.5L173.5,129.4L172.9,128.1L174.5,126.7L176.8,130.0L177.0,125.9L174.3,125.1L177.0,124.6L178.5,121.7L184.1,123.5L182.2,121.1L183.6,116.8L185.1,118.0L187.3,115.8L191.4,117.1L191.2,114.9L192.5,115.0L192.7,113.3L196.4,116.8L198.8,117.7L201.7,117.1L203.1,114.8L201.8,113.1L202.7,109.9L208.4,105.5L209.8,102.7L212.3,102.9L213.3,101.3L218.4,103.7L218.5,101.1L219.7,99.7L222.2,100.5L223.1,102.2L225.5,102.6L226.9,99.7L233.6,101.4L235.6,99.2L239.1,101.1L240.0,102.8L242.7,103.0L242.0,100.8L247.8,96.3L249.1,96.4L249.8,99.3L252.3,101.8L251.3,103.7ZM326.6,71.8L327.1,75.2L324.8,77.3L321.1,75.4L320.7,73.0Z"/><path d="M182.2,234.4L181.1,237.6L183.0,235.8L183.9,237.2L183.2,238.5L184.9,240.1L179.0,239.1L178.7,237.4L180.7,234.7ZM175.7,238.0L178.2,241.5L180.1,239.8L183.9,240.7L183.1,242.0L183.4,245.2L182.3,246.5L183.6,247.4L181.6,247.8L181.3,246.5L178.4,247.4L178.0,243.2L175.7,244.0L175.9,246.3L173.4,246.3L172.3,244.5L173.4,243.3L170.9,238.5L171.8,235.4L173.7,235.5L173.3,233.9L175.1,232.7L177.1,234.1ZM214.4,242.6L212.6,244.0L214.5,246.2L212.0,245.7L212.6,247.5L209.5,247.8L211.0,246.0L209.4,245.6L210.6,243.2L208.4,243.9L209.1,242.6L207.8,243.3L207.6,242.6L209.9,241.9L210.1,238.9L206.9,239.8L206.2,241.2L204.3,237.3L207.0,234.1L209.1,235.7L209.5,234.5L210.6,234.7L211.9,236.1L210.1,232.3L211.0,231.3L213.1,232.0L213.7,229.5L214.8,230.0L214.1,228.9L214.6,226.9L216.7,228.2L215.3,229.7L217.0,232.7L215.4,236.9L216.2,237.5L216.7,235.9L218.3,236.0L217.9,237.6L216.9,237.8L217.4,239.1L215.8,239.4L216.7,239.4L217.7,242.6L216.2,242.1L216.2,241.0L215.2,242.0L214.3,240.9ZM203.7,223.8L204.5,224.7L198.8,226.5L199.7,227.2L199.0,228.4L200.1,228.3L199.8,227.2L202.5,226.6L204.1,224.7L204.8,226.1L203.6,226.5L205.7,228.1L204.0,230.1L201.0,229.8L202.8,230.8L201.7,237.3L202.9,236.3L202.7,234.8L204.4,236.2L202.4,239.4L200.3,240.0L199.1,238.7L201.6,237.7L199.9,237.6L199.4,236.1L199.4,237.5L198.1,236.4L198.0,237.3L197.0,237.1L195.5,235.6L198.4,235.1L196.6,231.7L195.6,234.8L194.3,235.6L194.0,233.2L192.9,232.9L190.5,233.3L190.7,236.0L188.4,235.0L187.3,236.3L185.7,235.6L186.7,234.2L183.3,233.8L182.1,232.0L183.2,230.8L182.3,227.9L183.3,224.3L182.3,224.6L181.6,227.6L181.1,226.3L179.4,227.4L180.4,227.1L181.5,228.8L181.0,230.5L180.4,229.6L179.7,230.9L178.8,229.7L177.6,230.7L176.7,228.5L175.4,232.1L172.9,232.7L172.6,231.7L170.5,234.2L168.5,231.5L169.9,228.7L168.9,226.3L161.6,217.9L161.3,213.9L159.4,211.0L161.5,208.8L161.0,206.7L164.2,201.8L162.3,200.9L163.2,199.2L161.9,196.2L159.7,195.1L162.3,191.1L161.5,189.3L163.6,185.4L163.8,181.7L166.5,180.0L167.8,177.0L172.6,175.7L173.5,173.2L174.7,173.0L175.2,174.4L176.6,174.0L176.8,176.4L179.7,176.2L181.1,178.0L184.1,177.2L186.7,178.4L187.0,180.5L188.5,180.8L190.5,183.8L190.8,187.0L188.8,187.7L188.8,188.9L198.1,189.3L199.8,191.8L203.0,189.8L205.9,189.8L206.0,187.7L207.2,187.1L207.5,190.7L209.9,193.0L215.1,192.5L218.6,194.2L222.9,192.8L224.8,190.0L231.9,191.3L231.7,193.2L229.4,194.9L231.3,197.0L233.5,196.4L233.4,197.5L236.0,198.6L239.0,202.6L240.6,202.2L241.7,204.1L240.4,207.0L236.7,206.5L237.5,207.6L236.2,210.5L231.4,212.4L230.2,215.0L224.7,216.4L224.5,220.0L224.1,219.0L220.4,219.6L222.9,222.6L221.3,224.6L219.9,224.6L220.8,223.3L220.2,222.4L218.8,222.9L219.9,223.4L218.9,225.7L218.9,224.6L217.5,223.9L217.9,223.2L215.1,223.0L215.2,220.2L214.2,220.6L214.0,222.1L213.0,220.1L211.0,220.9L210.1,217.0L212.3,215.8L208.9,217.8L210.5,220.6L209.3,221.2L210.7,221.2L210.0,221.9L212.1,224.2L210.8,224.8L212.4,225.1L209.3,226.1L210.5,225.1L208.8,225.2L209.8,223.7L208.0,223.6L207.5,221.9L206.5,223.3L203.2,222.9Z"/><path d="M125.5,321.5L125.5,323.5L126.6,325.2L127.2,323.7L127.7,324.9L126.5,325.6L127.2,326.8L126.2,326.5L125.7,329.1L124.0,330.3L122.2,334.2L119.3,334.4L117.5,336.2L113.3,336.4L110.3,338.9L106.4,338.5L104.1,339.6L103.2,338.4L96.7,338.5L95.2,339.6L95.0,341.2L93.9,341.4L88.3,335.4L88.7,332.0L95.9,324.3L105.0,321.1L112.1,320.2L112.6,319.0L113.7,319.7L118.6,318.3L121.8,318.7L122.4,320.3Z"/></g><path class="kr-daegu" d="M215.5,166.4L218.0,169.1L217.5,171.8L218.8,174.4L218.2,176.2L216.8,176.3L216.6,179.4L214.8,180.4L215.2,184.1L211.9,185.9L211.3,183.6L208.9,183.7L207.1,185.2L207.2,187.0L206.0,187.7L206.0,189.7L199.2,191.6L200.7,189.8L198.2,185.8L202.2,185.7L202.2,184.4L199.8,182.3L201.7,179.2L204.8,178.8L203.1,176.9L199.8,176.5L200.6,173.6L203.4,170.9L204.5,171.5L204.1,173.6L205.7,174.4L207.4,171.4L207.1,168.6L208.3,169.8L211.6,167.0Z"/><circle class="kr-dok" cx="374.7" cy="90.5" r="1.6"/><circle class="kr-pin" cx="210.7" cy="175.5" r="5"/><circle class="kr-ring" cx="210.7" cy="175.5" r="11"/></symbol></svg>
+<div class="bg" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i><i class="orb o4"></i><div class="deco"><svg viewBox="40 60 520 430" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="sph" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#F6C9E0"/><stop offset="1" stop-color="#D79CC4"/></radialGradient></defs><ellipse cx="328.0" cy="330.0" rx="93" ry="45" fill="#6C74C0" fill-opacity=".13"/><ellipse cx="423.3" cy="385.0" rx="58" ry="28" fill="#6C74C0" fill-opacity=".13"/><ellipse cx="232.7" cy="385.0" rx="49" ry="24" fill="#6C74C0" fill-opacity=".13"/><ellipse cx="328.0" cy="440.0" rx="48" ry="23" fill="#6C74C0" fill-opacity=".13"/><polygon points="195.2,310.5 300.0,371.0 300.0,250.0 195.2,189.5" fill="#CBB0E9" fill-opacity="0.92"/><polygon points="404.8,310.5 300.0,371.0 300.0,250.0 404.8,189.5" fill="#B592DA" fill-opacity="0.92"/><polygon points="300.0,129.0 404.8,189.5 300.0,250.0 195.2,189.5" fill="#EBDDF8" fill-opacity="0.92"/><polyline points="195.2,189.5 300.0,129.0 404.8,189.5" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6" stroke-linejoin="round"/><polygon points="334.3,366.6 402.9,406.2 402.9,335.8 334.3,296.2" fill="#B3C8F5" fill-opacity="0.92"/><polygon points="475.3,364.4 402.9,406.2 402.9,335.8 475.3,294.0" fill="#93B0EA" fill-opacity="0.92"/><polygon points="406.7,254.4 475.3,294.0 402.9,335.8 334.3,296.2" fill="#DCE8FD" fill-opacity="0.92"/><polyline points="334.3,296.2 406.7,254.4 475.3,294.0" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6" stroke-linejoin="round"/><polygon points="128.5,362.2 204.7,406.2 204.7,357.8 128.5,313.8" fill="#A9DFC4" fill-opacity="0.92"/><polygon points="269.5,368.8 204.7,406.2 204.7,357.8 269.5,320.4" fill="#8CCDAE" fill-opacity="0.92"/><polygon points="193.3,276.4 269.5,320.4 204.7,357.8 128.5,313.8" fill="#D5F2E3" fill-opacity="0.92"/><polyline points="128.5,313.8 193.3,276.4 269.5,320.4" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6" stroke-linejoin="round"/><polygon points="261.9,417.2 307.6,443.6 307.6,346.8 261.9,320.4" fill="#FFC9A0" fill-opacity="0.92"/><polygon points="357.2,415.0 307.6,443.6 307.6,346.8 357.2,318.2" fill="#F5AE7C" fill-opacity="0.92"/><polygon points="311.4,291.8 357.2,318.2 307.6,346.8 261.9,320.4" fill="#FFE7D2" fill-opacity="0.92"/><polyline points="261.9,320.4 311.4,291.8 357.2,318.2" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="306.0" cy="191.5" rx="20" ry="9" fill="#6C74C0" fill-opacity=".16"/><circle cx="300.0" cy="167.5" r="24" fill="url(#sph)"/></svg></div><div class="iso"><svg id="isoBg" viewBox="40 92 580 560" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polygon points="49.4,476.4 330.0,638.4 330.0,624.0 49.4,462.0" fill="#A8D8C0" fill-opacity="1"/><polygon points="610.6,476.4 330.0,638.4 330.0,624.0 610.6,462.0" fill="#8FC5AB" fill-opacity="1"/><polygon points="330.0,300.0 610.6,462.0 330.0,624.0 49.4,462.0" fill="#CDEFDD" fill-opacity="1"/><polygon points="330.0,311.5 589.8,461.5 330.0,611.5 70.2,461.5" fill="none" fill-opacity="1" stroke="#F4A3C4" stroke-width="1.6" stroke-linejoin="round"/><polygon points="172.0,465.6 330.0,556.8 334.2,616.8 180.4,528.0" fill="#7C84C8" fill-opacity="0.2"/><polygon points="163.7,456.0 330.0,552.0 330.0,525.6 163.7,429.6" fill="#A9C2F2" fill-opacity="1"/><polygon points="496.3,456.0 330.0,552.0 330.0,525.6 496.3,429.6" fill="#8CA9E6" fill-opacity="1"/><polygon points="330.0,333.6 496.3,429.6 330.0,525.6 163.7,429.6" fill="#D9E4FB" fill-opacity="1"/><polygon points="188.7,429.6 330.0,511.2 330.0,436.8 188.7,355.2" fill="#B7CBF6" fill-opacity="1"/><polygon points="471.3,429.6 330.0,511.2 330.0,436.8 471.3,355.2" fill="#97B2EC" fill-opacity="1"/><polygon points="330.0,273.6 471.3,355.2 330.0,436.8 188.7,355.2" fill="#E4ECFD" fill-opacity="1"/><polygon points="194.9,426.3 323.8,500.7 323.8,489.7 194.9,415.3" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="465.1,426.3 336.2,500.7 336.2,489.7 465.1,415.3" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="194.9,401.5 323.8,475.9 323.8,464.9 194.9,390.5" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="465.1,401.5 336.2,475.9 336.2,464.9 465.1,390.5" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="194.9,376.7 323.8,451.1 323.8,440.1 194.9,365.7" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="465.1,376.7 336.2,451.1 336.2,440.1 465.1,365.7" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="188.7,355.2 284.3,410.4 284.3,362.4 188.7,307.2" fill="#CBB0E6" fill-opacity="1"/><polygon points="425.6,328.8 284.3,410.4 284.3,362.4 425.6,280.8" fill="#B793DB" fill-opacity="1"/><polygon points="330.0,225.6 425.6,280.8 284.3,362.4 188.7,307.2" fill="#EBDDF7" fill-opacity="1"/><polygon points="194.9,352.1 278.0,400.1 278.0,389.5 194.9,341.5" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="419.4,325.7 290.5,400.1 290.5,389.5 419.4,315.1" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="194.9,328.1 278.0,376.1 278.0,365.5 194.9,317.5" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="419.4,301.7 290.5,376.1 290.5,365.5 419.4,291.1" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="188.7,307.2 242.7,338.4 242.7,304.8 188.7,273.6" fill="#EBB4D0" fill-opacity="1"/><polygon points="384.0,256.8 242.7,338.4 242.7,304.8 384.0,223.2" fill="#DC95BC" fill-opacity="1"/><polygon points="330.0,192.0 384.0,223.2 242.7,304.8 188.7,273.6" fill="#F6DDEB" fill-opacity="1"/><polygon points="194.9,301.4 236.5,325.4 236.5,310.6 194.9,286.6" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="377.8,251.0 248.9,325.4 248.9,310.6 377.8,236.2" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="298.8,217.2 325.8,232.8 325.8,216.0 298.8,200.4" fill="#97D1B7" fill-opacity="1"/><polygon points="354.9,216.0 325.8,232.8 325.8,216.0 354.9,199.2" fill="#7FBFA3" fill-opacity="1"/><polygon points="327.9,183.6 354.9,199.2 325.8,216.0 298.8,200.4" fill="#BFE8D2" fill-opacity="1"/><line x1="382.0" y1="582.0" x2="211.5" y2="262.8" stroke="#F5A524" stroke-width="2.2" stroke-dasharray="6 7" stroke-linecap="round"/><circle cx="180.4" cy="225.6" r="14" fill="#FFD27A"/><circle cx="180.4" cy="225.6" r="24" fill="#FFD27A" fill-opacity=".28"/><ellipse cx="117.7" cy="463.4" rx="13" ry="7" fill="#7C84C8" fill-opacity=".18"/><circle cx="109.7" cy="444.4" r="12" fill="#9ED8BE"/><circle cx="106.7" cy="441.4" r="7" fill="#C4EBD6"/><ellipse cx="475.2" cy="521.0" rx="13" ry="7" fill="#7C84C8" fill-opacity=".18"/><circle cx="467.2" cy="502.0" r="12" fill="#9ED8BE"/><circle cx="464.2" cy="499.0" r="7" fill="#C4EBD6"/></svg></div></div>
+<div id="top">
+  <b>학습용·참고용입니다. 인허가 판정이 아닙니다.</b> 실제 설계는 최신 법조문·지자체 조례·전문가 확인이 필요해요.
+  <span class="badge">규칙 기반 설명(AI 아님)</span>
+</div>
+<main class="app">
+<header class="tbk">
+  <div class="brand"><svg class="kr-art" viewBox="0 0 379 353" aria-hidden="true"><use href="#kr"/></svg>
+    <div><h1>건축 법규 <em>"이유"</em> 보기 <span class="badge gray">v0.1</span></h1>
+    <p class="hint">답이나 수정안은 알려 주지 않아요. 어떤 규정 때문에 어느 부분이 얼마나 걸리는지(사실)와 그 이유만 보여 줘요.</p></div></div>
+  <div class="search"><input type="text" id="vwQuery" placeholder="주소 검색 (예: 대구 중구 동성로 1)" autocomplete="off"><button id="btnVwSearch">검색</button></div>
+  <nav class="actions"><button class="sub" id="btnInfo">안내·법조문</button><button class="sub" id="btnSum">사용 기록 요약</button></nav>
+</header>
+<nav class="stepper" aria-label="진행 단계"><button class="st" data-st="1"><i>1</i><span>대지 선택</span></button><span class="bar"></span><button class="st" data-st="2"><i>2</i><span>계획 입력</span></button><span class="bar"></span><button class="st" data-st="3"><i>3</i><span>내가 먼저 설명</span></button><span class="bar"></span><button class="st" data-st="4"><i>4</i><span>결과 보기</span></button></nav>
+<aside class="pL">
+<section id="sec-session" class="sess">
+  <h2>사용 기록 <span class="hint" style="font-weight:normal">이 브라우저에만 저장돼요. 이름 대신 별칭을 써 주세요.</span></h2>
+    <div class="grid">
+    <div><label for="alias">별칭 (실명 아님)</label><input type="text" id="alias" maxlength="20"></div>
+    <div><label for="group">구분</label>
+      <select id="group"><option>저학년</option><option>4학년 선배</option><option>기타</option></select></div>
+    <div><label for="mode">기록 종류</label>
+      <select id="mode"><option>실사용</option><option>예시 테스트</option></select>
+      <p class="hint">예시로 눌러 보는 거면 "예시 테스트"를 고르세요. 요약에서 빠져요.</p></div>
+    <div><label for="baseline">평소 확인 시간 (분)</label>
+      <input type="number" id="baseline" step="any" inputmode="decimal">
+      <p class="hint">비교 기준선이에요. 모르면 비워 둬도 돼요.</p></div>
+  </div>
+  <button id="btnStart">사용 시작 (타이머 켜기)</button>
+  <span id="sessState"></span>
+  <div id="sessMsg" class="warn hide"></div>
+  <div id="endForm" class="card hide">
+    <h3>사용 마무리 — 이해도 기록</h3>
+    <label for="score">결과를 보고 "왜 깎이는지"를 내 말로 설명할 수 있나요? (1 전혀 못함 ~ 5 충분히 가능)</label>
+    <select id="score"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+    <label for="yn">같은 질문, 한 단어로</label>
+    <select id="yn"><option value="">선택</option><option>예</option><option>애매</option><option>아니오</option></select>
+    <div id="seniorBox" class="hide">
+      <h3>4학년 선배용 칸</h3>
+      <label for="srNote">법규 관점에서 틀리거나 아쉬운 점</label><textarea id="srNote"></textarea>
+      <label for="srLaw">근거 조문 (알면)</label><input type="text" id="srLaw">
+      <label>추가로 필요한 법규</label>
+      <div id="srExtra"></div>
+    </div>
+    <button id="btnSave">기록 저장</button>
+    <div id="saveMsg" class="hint"></div>
+  </div>
+</section>
+<section id="sec-input">
+  <h2>계획 입력</h2>
+  <p id="drawNote" class="hint hide"></p>
+  <p><b>예시 불러오기</b> (<span class="bad">실제 설계 아님</span>, 도구 테스트용 가짜 숫자):
+    <button class="sub" data-ex="0">A 정상</button><button class="sub" data-ex="1">B 면적 초과</button><button class="sub" data-ex="2">C 일조사선</button></p>
+  <div class="grid">
+    <div><label for="zone">용도지역</label>
+      <select id="zone"><option value="일반">일반주거지역</option><option value="전용">전용주거지역</option><option value="그외">그 외 (상업·공업·녹지 등)</option></select>
+      <p class="hint" id="zoneHint"></p></div>
+    <div><label for="bcrLimit">건폐율 상한 (%)</label><input type="number" id="bcrLimit" step="any" inputmode="decimal" value="60">
+      <p class="hint"><b>예시값</b>이에요. 지자체 조례마다 달라서 직접 확인해 입력하세요.</p></div>
+    <div><label for="farLimit">용적률 상한 (%)</label><input type="number" id="farLimit" step="any" inputmode="decimal" value="200">
+      <p class="hint"><b>예시값</b>이에요. 조례 확인 후 직접 입력하세요.</p></div>
+    <div><label for="site">대지면적 (㎡)</label><input type="number" id="site" step="any" inputmode="decimal">
+      <p class="hint">지도에서 필지를 여러 개 골라 합칠 수 있어요. 지도를 쓰지 않을 땐 합친 대지면적 숫자만 넣으면 돼요.</p></div>
+    <div><label for="footprint">건축면적 (㎡)</label><input type="number" id="footprint" step="any" inputmode="decimal"></div>
+    <div><label for="floors">층수 (지상, 1~30)</label><input type="number" id="floors" step="1" inputmode="numeric"></div>
+    <div><label for="floorArea">층별 바닥면적 (㎡)</label><input type="number" id="floorArea" step="any" inputmode="decimal">
+      <p class="hint"><label style="display:inline;font-weight:normal"><input type="checkbox" id="perChk">층마다 다르게 입력</label></p>
+      <p class="hint">용적률은 <b>지상층 연면적</b> 기준이에요. 지하층 등 제외되는 면적은 빼고 입력하세요(단순화).</p></div>
+    <div><label for="floorH">층고 (m)</label><input type="number" id="floorH" step="any" inputmode="decimal"></div>
+    <div><label for="setback">정북 이격 거리 (m)</label><input type="number" id="setback" step="any" inputmode="decimal">
+      <p class="hint">정북 방향 인접 대지경계선까지의 거리 = 건물 북쪽 외벽에서 정북 쪽 경계선까지 거리. 모든 층이 같은 위치라고 가정해요.</p></div>
+  </div>
+  <div id="perFloor" class="grid hide"></div>
+  <div id="inErr" class="warn hide" role="alert"></div>
+</section>
+<section id="sec-mine">
+  <h2>내가 먼저 설명해 보기</h2>
+  <p>결과를 보기 <b>전에</b>, 이 계획이 건폐율·용적률·정북일조사선에서 어떻게 될지, 왜 그런지 내 말로 적어 보세요. 결과를 본 뒤 도구의 설명과 나란히 비교해 줘요.</p>
+  <textarea id="myExp" placeholder="예: 건축면적이 대지의 절반이라 건폐율은 괜찮을 것 같다. 5층이면 높이가 ... 때문에 북쪽에서 ..."></textarea>
+  <button id="btnCalc">결과 보기</button>
+  <span class="hint">누를 때마다 사용 횟수가 1 늘어요.</span>
+  <div id="calcMsg" class="warn hide" role="alert"></div>
+</section>
+</aside>
+<div class="pC"><div class="mapcard">
+<div id="lmap" aria-label="지도"></div>
+<section class="finder">
+  <div class="tabs" role="tablist"><button class="tab on" data-tab="map" role="tab">지도에서 내 땅 고르기</button><button class="tab" data-tab="file" role="tab">파일 올리기</button><span class="badge gray">대구 안에서만</span></div>
+  <div data-pane="map">
+  <div id="vwFields">
+    <div class="grid">
+      <div><label for="vwKey">VWorld 인증키</label><input type="text" id="vwKey" autocomplete="off" spellcheck="false"></div>
+      <div><label for="vwDom">키에 등록한 서비스 URL(도메인)</label><input type="text" id="vwDom" value="localhost" spellcheck="false"></div>
+    </div>
+    <p class="hint">키는 vworld.kr ▸ 오픈API ▸ 인증키 발급(무료)에서 받아요. 서비스 URL은 <b>http://localhost</b>로 적고, 위 칸에는 <b>localhost</b>를 넣어요. 키는 이 브라우저에만 저장돼요.</p>
+  </div>
+  <button id="btnMapOpen">지도 열기</button>
+  <div id="mapWork" class="hide">
+    <div id="parcelInfo" class="card">지도에서 내 땅을 눌러 보세요. 필지를 더 눌러 <b>두 개 이상</b> 합칠 수도 있고, 선택한 필지를 다시 누르면 해제돼요.</div>
+    <button id="btnParcelUse" disabled>이 필지를 대지로 쓰기</button><button class="sub" id="btnParcelClear" disabled>선택 비우기</button>
+  </div>
+  <p class="hint">누른 위치의 좌표와 검색어는 VWorld(국토교통부)로 보내져요. 필지 경계는 참고용 연속지적도라 토지대장 면적과 다를 수 있어요.</p>
+  <div id="mapMsg" class="warn hide" role="alert"></div>
+
+  </div>
+  <div data-pane="file" class="hide">
+  <div class="files">
+    <div><label for="rhFile">Rhino 파일 (.3dm)</label><input type="file" id="rhFile" accept=".3dm"></div>
+    <div><label for="dxfFile">또는 DXF</label><input type="file" id="dxfFile" accept=".dxf"></div>
+    <div><label for="mapFile">또는 지도 캡처 이미지</label><input type="file" id="mapFile" accept="image/*"></div>
+  </div>
+  <p class="hint">건물 윤곽을 <b>닫힌 곡선</b>으로 만들어 .3dm 그대로 올리거나, 곡선만 DXF(ASCII)로 저장해 올리세요. 솔리드·서피스·메쉬는 읽지 않아요(윤곽 곡선을 따로 두세요). .3dm은 처음 한 번 라이브러리를 내려받아요. 도면 파일은 이 기기 안에서만 읽어요.</p>
+  <div class="grid">
+    <div><label for="dxfUnit">도면 단위</label>
+      <select id="dxfUnit"><option value="mm">mm (밀리미터)</option><option value="cm">cm</option><option value="m">m (미터)</option></select></div>
+    <div><label for="northDeg">북쪽 방향 (도)</label><input type="number" id="northDeg" value="0" step="any" inputmode="decimal">
+      <p class="hint">도면 위쪽이 북쪽이면 0. 시계 방향으로 몇 도 돌아가 있는지 적어요. 예: 도면 오른쪽이 북쪽이면 90.</p></div>
+  </div>
+  
+  <div id="layerBox" class="hide"><p class="hint"><b>솔리드로 모델링한 건물</b>은 바닥에 투영해 윤곽을 만들어요. 건물에 쓸 레이어만 체크하세요 (주변 건물·지반은 기본으로 꺼 둬요).</p><div id="layerList" class="layers"></div><button class="sub" id="btnRebuild">이 레이어로 윤곽 다시 만들기</button></div>
+  </div>
+</section>
+<details id="sec-cad" class="dock idle" open>
+  <summary>도면에서 확인·배치 <small>(대지와 건물 위치를 확인하고 입력칸에 채워요)</small> <span class="fold-hint">이 줄을 누르면 접혀요</span></summary>
+  <div id="cadMsg" class="warn hide" role="alert"></div>
+  <div id="cadWork" class="hide">
+    <p id="cadInfo"></p>
+    <button class="sub" id="zIn">＋ 확대</button><button class="sub" id="zOut">－ 축소</button><button class="sub" id="zFit">전체 보기</button>
+    <span class="hint">끌면 이동해요.</span>
+    <div style="position:relative;margin-top:6px"><svg id="cadSvg"><g id="cadBg"></g><g id="cadFg"></g></svg><div id="north"><span id="northArrow" style="display:inline-block">↑</span><br>북</div></div>
+    <button id="btnCadOk">도면(지도)이 맞아요 (확인)</button>
+    <div id="cadPick" class="hide">
+      <h3>건물·대지 정하기</h3>
+      <button class="sub on" data-tool="bld">건물 윤곽 고르기</button><button class="sub" data-tool="sel">대지 고르기 (닫힌 선 클릭)</button><button class="sub" data-tool="draw">대지 직접 그리기 (점 찍기)</button><button class="sub" data-tool="bdraw">건물 직접 그리기 (점 찍기)</button><button class="sub" data-tool="scale">축척 맞추기 (지도)</button><button class="sub" data-tool="move">대지 옮기기 (끌기)</button>
+      <p class="hint" id="toolHint"></p>
+      <div id="scaleBox" class="hide"><label for="mapDist">누른 두 점 사이의 실제 거리 (m)</label><input type="number" id="mapDist" step="any" inputmode="decimal"><button class="sub" id="btnScale">축척 적용</button> <span id="scaleInfo" class="hint"></span></div>
+      <div id="drawBtns" class="hide"><button class="sub" id="btnClose">대지 완성 (닫기)</button><button class="sub" id="btnUndo">마지막 점 취소</button><button class="sub" id="btnClear">다시 그리기</button></div>
+      <div id="parcelBtns" class="hide"><button class="sub" id="btnParcelToBld">대지를 선택한 건물 위로 옮기기</button></div>
+      <div id="cadRes" class="card"></div>
+      <button id="btnFill" disabled>왼쪽 입력칸에 채우기</button> <span class="hint" id="fillHint"></span>
+    </div>
+  </div>
+</details>
+</div></div>
+<aside class="pR">
+<div id="empty" class="empty"><div class="empty-art"><svg id="iso" viewBox="40 92 580 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="계단식으로 물러나는 건물 일러스트"><polygon points="49.4,476.4 330.0,638.4 330.0,624.0 49.4,462.0" fill="#A8D8C0" fill-opacity="1"/><polygon points="610.6,476.4 330.0,638.4 330.0,624.0 610.6,462.0" fill="#8FC5AB" fill-opacity="1"/><polygon points="330.0,300.0 610.6,462.0 330.0,624.0 49.4,462.0" fill="#CDEFDD" fill-opacity="1"/><polygon points="330.0,311.5 589.8,461.5 330.0,611.5 70.2,461.5" fill="none" fill-opacity="1" stroke="#F4A3C4" stroke-width="1.6" stroke-linejoin="round"/><polygon points="172.0,465.6 330.0,556.8 334.2,616.8 180.4,528.0" fill="#7C84C8" fill-opacity="0.2"/><polygon points="163.7,456.0 330.0,552.0 330.0,525.6 163.7,429.6" fill="#A9C2F2" fill-opacity="1"/><polygon points="496.3,456.0 330.0,552.0 330.0,525.6 496.3,429.6" fill="#8CA9E6" fill-opacity="1"/><polygon points="330.0,333.6 496.3,429.6 330.0,525.6 163.7,429.6" fill="#D9E4FB" fill-opacity="1"/><polygon points="188.7,429.6 330.0,511.2 330.0,436.8 188.7,355.2" fill="#B7CBF6" fill-opacity="1"/><polygon points="471.3,429.6 330.0,511.2 330.0,436.8 471.3,355.2" fill="#97B2EC" fill-opacity="1"/><polygon points="330.0,273.6 471.3,355.2 330.0,436.8 188.7,355.2" fill="#E4ECFD" fill-opacity="1"/><polygon points="194.9,426.3 323.8,500.7 323.8,489.7 194.9,415.3" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="465.1,426.3 336.2,500.7 336.2,489.7 465.1,415.3" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="194.9,401.5 323.8,475.9 323.8,464.9 194.9,390.5" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="465.1,401.5 336.2,475.9 336.2,464.9 465.1,390.5" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="194.9,376.7 323.8,451.1 323.8,440.1 194.9,365.7" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="465.1,376.7 336.2,451.1 336.2,440.1 465.1,365.7" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="188.7,355.2 284.3,410.4 284.3,362.4 188.7,307.2" fill="#CBB0E6" fill-opacity="1"/><polygon points="425.6,328.8 284.3,410.4 284.3,362.4 425.6,280.8" fill="#B793DB" fill-opacity="1"/><polygon points="330.0,225.6 425.6,280.8 284.3,362.4 188.7,307.2" fill="#EBDDF7" fill-opacity="1"/><polygon points="194.9,352.1 278.0,400.1 278.0,389.5 194.9,341.5" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="419.4,325.7 290.5,400.1 290.5,389.5 419.4,315.1" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="194.9,328.1 278.0,376.1 278.0,365.5 194.9,317.5" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="419.4,301.7 290.5,376.1 290.5,365.5 419.4,291.1" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="188.7,307.2 242.7,338.4 242.7,304.8 188.7,273.6" fill="#EBB4D0" fill-opacity="1"/><polygon points="384.0,256.8 242.7,338.4 242.7,304.8 384.0,223.2" fill="#DC95BC" fill-opacity="1"/><polygon points="330.0,192.0 384.0,223.2 242.7,304.8 188.7,273.6" fill="#F6DDEB" fill-opacity="1"/><polygon points="194.9,301.4 236.5,325.4 236.5,310.6 194.9,286.6" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="377.8,251.0 248.9,325.4 248.9,310.6 377.8,236.2" fill="#FFFFFF" fill-opacity="0.55"/><polygon points="298.8,217.2 325.8,232.8 325.8,216.0 298.8,200.4" fill="#97D1B7" fill-opacity="1"/><polygon points="354.9,216.0 325.8,232.8 325.8,216.0 354.9,199.2" fill="#7FBFA3" fill-opacity="1"/><polygon points="327.9,183.6 354.9,199.2 325.8,216.0 298.8,200.4" fill="#BFE8D2" fill-opacity="1"/><line x1="382.0" y1="582.0" x2="211.5" y2="262.8" stroke="#F5A524" stroke-width="2.2" stroke-dasharray="6 7" stroke-linecap="round"/><circle cx="180.4" cy="225.6" r="14" fill="#FFD27A"/><circle cx="180.4" cy="225.6" r="24" fill="#FFD27A" fill-opacity=".28"/><ellipse cx="117.7" cy="463.4" rx="13" ry="7" fill="#7C84C8" fill-opacity=".18"/><circle cx="109.7" cy="444.4" r="12" fill="#9ED8BE"/><circle cx="106.7" cy="441.4" r="7" fill="#C4EBD6"/><ellipse cx="475.2" cy="521.0" rx="13" ry="7" fill="#7C84C8" fill-opacity=".18"/><circle cx="467.2" cy="502.0" r="12" fill="#9ED8BE"/><circle cx="464.2" cy="499.0" r="7" fill="#C4EBD6"/></svg></div><div class="empty-tx"><b>아직 결과가 없어요</b><ol class="flow"><li><i class="step s1">1</i><span>가운데 지도에서 내 땅을 고르거나 .3dm·DXF를 올려요 (면적이 채워져요)</span></li><li><i class="step s2">2</i><span>층수·층고 같은 나머지 값을 넣어요</span></li><li><i class="step s3">3</i><span>결과를 보기 전에 내 말로 먼저 설명해 봐요</span></li><li><i class="step s4">4</i><span>"결과 보기"를 누르면 여기에 나와요 (예시로 먼저 눌러 봐도 돼요)</span></li></ol><span class="label">Daegu · 8 districts</span></div></div>
+<!-- ===================== 3. 결과 ===================== -->
+<div id="results" class="hide">
+<section class="glance">
+  <h2>결과 <span class="badge">규칙 기반 설명(AI 아님)</span></h2>
+  <div id="resNums"></div>
+  <div class="glance2">
+    <div class="g-svg"><h3>단면 그림</h3><div id="svgBox"></div></div>
+    <div class="g-lines"><h3>크리틱용 한 줄</h3><div id="oneLines"></div></div>
+  </div>
+</section>
+<details><summary>층별 일조사선 표</summary><div id="sunBox"></div></details>
+<details><summary>이유 설명 <small>(무엇을 계산했나 · 왜 있나 · 그래서 걸리나)</small></summary><div id="reasons"></div></details>
+<details><summary>생각해 볼 질문</summary><p class="hint">정답이 아니라 질문만 드려요.</p><ul class="plain" id="qs"></ul></details>
+<details><summary>내 설명 vs 도구 설명</summary><div class="two" id="cmpMine"></div>
+  <p class="hint">다른 점은 무엇인가요? 내가 빠뜨린 규정이나 숫자가 있나요?</p></details>
+<details><summary>수정 전/후 비교</summary><div id="cmpPrev"></div></details>
+</div>
+
+</aside>
+</main>
+<dialog id="dlgInfo"><div class="dlg"><div class="dlg-h"><b>안내 · 법조문 · 자체 점검</b><button class="sub" data-close>닫기</button></div>
+<div class="bottom">
+<!-- ===================== 안내 ===================== -->
+<section>
+  <h2>이번 버전에서 다루지 않는 것</h2>
+  <ul class="plain">
+    <li>주차 · 조경 · 도로사선 · 지구단위계획 · 조례 세부사항</li>
+    <li>정북일조사선의 예외 (정북 방향 대지 상황, 공동주택 특례 등)</li>
+    <li>건폐율·용적률의 완화·제외 규정 (이 도구에는 법규를 무시하거나 완화하는 옵션이 없어요)</li>
+  </ul>
+  <button disabled>AI 설명 연결 (준비 중)</button>
+  <span class="hint">지금의 "AI 설명"은 AI가 아니라 정해진 규칙과 문구로 만든 설명이에요. 계산과 설명은 이 기기 안에서만 해요. 외부 통신은 "지도에서 내 땅 고르기"(VWorld)와 .3dm 라이브러리 내려받기를 쓸 때만 일어나요.</span>
+</section>
+
+<section>
+  <h2>내가 직접 확인할 법조문 항목</h2>
+  <p class="hint">아래 수치는 모두 "법조문 최신본 확인 필요"예요. 코드 맨 위 RULES에 모아 두었어요.</p>
+  <ul class="plain" id="lawList"></ul>
+</section>
+
+</div>
+
+<!-- ===================== 자체 점검 ===================== -->
+<details>
+  <summary>자체 점검 <small>(세 예시와 도면 계산이 기대값과 같은지)</small></summary>
+  <p class="hint">세 예시를 계산해 기대값과 같은지 확인해요. 내 입력칸·기록은 건드리지 않아요.</p>
+  <button id="btnSelf">자체 점검 실행</button>
+  <div id="selfOut"></div>
+</details>
+</div></dialog>
+<dialog id="dlgSum"><div class="dlg"><div class="dlg-h"><b>사용 기록 요약</b><button class="sub" data-close>닫기</button></div>
+<!-- ===================== 기록 요약 ===================== -->
+<section>
+  <h2>사용 기록 요약 <span class="badge gray">실사용 기록만</span></h2>
+  <div id="sumOut"></div>
+  <button id="btnCsv" class="sub">CSV 내보내기</button>
+  <button id="btnDel" class="sub">기록 삭제</button>
+</section>
+</div></dialog>
+
+<script>
+/* =====================================================================
+   [1] 규칙 계산 (화면과 무관한 순수 함수들)
+   ===================================================================== */
+/* ===== RULES 시작 ===== */
+// 모든 법규 수치는 여기에만 모아 둠. 각 값은 "법조문 최신본 확인 필요"
+const RULES = {
+  basis: '건축법 시행령 제86조',        // 근거 조문 — 법조문 최신본 확인 필요
+  sunZones: ['전용', '일반'],           // 일조사선 적용 용도지역(전용·일반주거) — 법조문 최신본 확인 필요
+  thresholdH: 10,                       // 기준 높이 10m — 법조문 최신본 확인 필요
+  minSetback: 1.5,                      // 10m 이하 부분의 최소 이격(m) — 법조문 최신본 확인 필요
+  ratio: 0.5,                           // 10m 초과 부분: 높이의 1/2 이상 — 법조문 최신본 확인 필요
+  farBasis: '지상층 연면적'             // 용적률 산정 기준(지하층 등 제외) — 법조문 최신본 확인 필요
+};
+const EPS = 1e-9;
+// 숫자를 보기 좋게 (소수 둘째 자리까지, 뒤의 0 제거)
+const f = (n, d = 2) => (n === null || n === undefined || isNaN(n)) ? '-' : String(Math.round(n * 10 ** d) / 10 ** d);
+
+// 정북일조사선: 층 상단 높이별 필요 이격 vs 실제 이격
+function sunCalc(inp) {
+  const R = RULES, s = inp.setback;
+  const need = h => h <= R.thresholdH ? R.minSetback : h * R.ratio;
+  const rows = [];
+  for (let i = 1; i <= inp.floors; i++) {
+    const top = i * inp.floorH, req = need(top), short = req - s;
+    rows.push({ floor: i, top, req, actual: s, short: Math.max(0, short), fail: short > EPS });
+  }
+  const failRows = rows.filter(x => x.fail);
+  // 걸리기 시작하는 높이: 이격이 최소값보다 작으면 0m부터, 아니면 max(기준높이, 이격÷비율)
+  const startH = s < R.minSetback - EPS ? 0 : Math.max(R.thresholdH, s / R.ratio);
+  return { rows, failRows, fail: failRows.length > 0, startH,
+           maxShort: Math.max(0, ...rows.map(x => x.short)), maxReq: Math.max(...rows.map(x => x.req)) };
+}
+
+// 전체 계산
+function calc(inp) {
+  const r = {};
+  r.bcr = inp.footprint * 100 / inp.site;
+  r.bcrAllowed = inp.site * inp.bcrLimit / 100;
+  r.bcrOver = inp.footprint - r.bcrAllowed > EPS;
+  r.bcrOverArea = r.bcrOver ? inp.footprint - r.bcrAllowed : 0;
+  r.bcrOverPt = r.bcrOver ? r.bcr - inp.bcrLimit : 0;
+  r.total = inp.areas.reduce((a, b) => a + b, 0);
+  r.far = r.total * 100 / inp.site;
+  r.farAllowed = inp.site * inp.farLimit / 100;
+  r.farOver = r.total - r.farAllowed > EPS;
+  r.farOverArea = r.farOver ? r.total - r.farAllowed : 0;
+  r.farOverPt = r.farOver ? r.far - inp.farLimit : 0;
+  r.height = inp.floors * inp.floorH;
+  r.sun = RULES.sunZones.includes(inp.zone) ? sunCalc(inp) : null;
+  return r;
+}
+
+// 이유 설명: 계산 → 결과 → 왜 있나 → 그래서 걸린다 + 크리틱용 한 줄 (해법은 쓰지 않음)
+function explain(inp, r) {
+  const R = RULES, e = {};
+  e.bcr = {
+    title: '건폐율',
+    what: `건폐율 = 건축면적 ÷ 대지면적 × 100 = ${f(inp.footprint)} ÷ ${f(inp.site)} × 100`,
+    result: `${f(r.bcr)}% (입력한 상한 ${f(inp.bcrLimit)}%) → ` + (r.bcrOver ? `상한을 ${f(r.bcrOverPt)}%p 넘음 (건축면적으로 ${f(r.bcrOverArea)}㎡ 초과)` : '상한 이내'),
+    why: '건물이 대지를 꽉 채우지 못하게 해서, 마당·통풍·채광·소방 활동 공간 같은 빈 땅을 남기려고 만든 규정이에요.',
+    so: r.bcrOver ? `상한에 맞는 건축면적은 ${f(r.bcrAllowed)}㎡인데 지금은 ${f(inp.footprint)}㎡라서 이 부분이 걸려요.`
+                  : `상한에 맞는 건축면적은 ${f(r.bcrAllowed)}㎡이고 지금은 ${f(inp.footprint)}㎡라서 걸리지 않아요.`,
+    line: r.bcrOver ? `대지 ${f(inp.site)}㎡에 건축면적 ${f(inp.footprint)}㎡라서 건폐율은 ${f(r.bcr)}%이고, 상한 ${f(inp.bcrLimit)}%보다 ${f(r.bcrOverPt)}%p 높게 계산됩니다.`
+                    : `대지 ${f(inp.site)}㎡에 건축면적 ${f(inp.footprint)}㎡라서 건폐율은 ${f(r.bcr)}%이고, 상한 ${f(inp.bcrLimit)}% 안에 들어옵니다.`
+  };
+  const areaTxt = inp.areas.length <= 8 ? ` (${inp.areas.map(a => f(a)).join(' + ')})` : '';
+  e.far = {
+    title: '용적률',
+    what: `용적률 = 지상층 연면적 ÷ 대지면적 × 100 = ${f(r.total)}${areaTxt} ÷ ${f(inp.site)} × 100`,
+    result: `${f(r.far)}% (입력한 상한 ${f(inp.farLimit)}%) → ` + (r.farOver ? `상한을 ${f(r.farOverPt)}%p 넘음 (연면적으로 ${f(r.farOverArea)}㎡ 초과)` : '상한 이내'),
+    why: '건물의 전체 크기(밀도)를 제한해서, 한 동네에 사람과 차가 지나치게 몰려 도로·상하수도·일조·통풍에 부담이 생기는 것을 막으려는 규정이에요.',
+    so: r.farOver ? `상한에 맞는 연면적은 ${f(r.farAllowed)}㎡인데 지금 지상 연면적은 ${f(r.total)}㎡라서 이 부분이 걸려요.`
+                  : `상한에 맞는 연면적은 ${f(r.farAllowed)}㎡이고 지금은 ${f(r.total)}㎡라서 걸리지 않아요.`,
+    line: r.farOver ? `지상 연면적 ${f(r.total)}㎡를 대지 ${f(inp.site)}㎡로 나누면 용적률 ${f(r.far)}%이고, 상한 ${f(inp.farLimit)}%보다 연면적 ${f(r.farOverArea)}㎡ 많습니다.`
+                    : `지상 연면적 ${f(r.total)}㎡를 대지 ${f(inp.site)}㎡로 나누면 용적률 ${f(r.far)}%이고, 상한 ${f(inp.farLimit)}% 안에 들어옵니다.`
+  };
+  const s = r.sun;
+  if (!s) {
+    e.sun = { title: '정북일조사선', na: true,
+      what: '용도지역을 "그 외"로 골랐어요.', result: '이 도구에서는 일조사선 계산 대상이 아님',
+      why: '', so: '', line: '이 도구에서는 정북일조사선을 계산하지 않았습니다.' };
+  } else {
+    const H = r.height, st = inp.setback, last = s.rows[s.rows.length - 1];
+    const fl = s.failRows.map(x => x.floor + '층').join(', ');
+    e.sun = {
+      title: '정북일조사선',
+      what: `정북 경계선에서 각 층 상단 높이마다 필요 이격을 구해 실제 이격 ${f(st)}m와 비교했어요. 높이 ${R.thresholdH}m 이하는 ${R.minSetback}m 이상, ${R.thresholdH}m를 넘으면 그 높이의 1/2 이상이에요. (건물 높이 = 층고 ${f(inp.floorH)}m × ${inp.floors}층 = ${f(H)}m)`,
+      result: s.fail
+        ? `${fl}이(가) 걸림. 가장 큰 부족은 ${f(s.maxShort)}m (${last.floor}층 상단 ${f(last.top)}m: 필요 ${f(last.req)}m, 실제 ${f(st)}m)`
+        : `모든 층 통과. 건물 높이 ${f(H)}m, 필요 이격 최대 ${f(s.maxReq)}m, 실제 이격 ${f(st)}m`,
+      why: '정북(북쪽) 이웃 대지는 건물 그림자가 가장 오래 지는 쪽이에요. 높을수록 그림자가 길어지니, 높아질수록 북쪽 경계에서 더 물러나게 해서 이웃의 햇빛을 지키려는 규정이에요.',
+      so: s.fail
+        ? (s.startH === 0 ? `실제 이격 ${f(st)}m가 가장 낮은 부분의 최소 이격 ${R.minSetback}m보다 작아서 모든 높이가 걸려요.`
+                          : `높이 ${f(s.startH)}m를 넘는 부분부터 필요 이격이 실제 이격 ${f(st)}m보다 커져요. 그래서 ${fl}의 ${f(s.startH)}m 초과 구간(건물 최상단 ${f(H)}m까지)이 걸려요.`)
+        : `건물 맨 위(${f(H)}m)에서도 필요 이격이 ${f(last.req)}m이고 실제 이격이 ${f(st)}m라서 걸리지 않아요.`,
+      line: s.fail ? `정북 경계에서 ${f(st)}m 떨어져 있는데, ${f(s.startH)}m를 넘는 부분은 높이의 절반만큼 물러나야 해서 ${last.floor}층 상단 ${f(last.top)}m는 ${f(last.req)}m가 필요하고 ${f(last.short)}m 부족합니다.`
+                   : `정북 경계에서 ${f(st)}m 떨어져 있고, 최고 높이 ${f(H)}m에서 필요한 이격은 ${f(last.req)}m라서 일조사선 안에 들어옵니다.`
+    };
+  }
+  e.summary = [e.bcr, e.far, e.sun].map(x => x.title + ': ' + x.line).join('\n');
+  return e;
+}
+
+// 생각해 볼 질문 (해법이 아닌 질문만)
+function questions(inp, r) {
+  const q = [];
+  q.push(r.bcrOver ? '건폐율은 어떤 두 숫자의 비율인가요? 그중 내가 정한 숫자는 무엇이고, 형태를 바꾸지 않고 줄일 수 있는 요소는 무엇일까요?'
+                   : '건폐율 상한까지 여유가 얼마나 있나요? 그 여유는 지금 설계의 어떤 선택과 연결되어 있나요?');
+  q.push(r.farOver ? '연면적에 가장 크게 기여하는 것은 층수와 층별 바닥면적 중 무엇인가요? 그 선택은 어떤 설계 의도에서 나왔나요?'
+                   : '용적률 상한까지 남은 여유는 어느 층의 어떤 공간에 쓰이고 있나요?');
+  if (r.sun) {
+    if (r.sun.fail) {
+      q.push(`규칙이 ${RULES.thresholdH}m를 기준으로 달라지는 이유는 무엇일까요?`);
+      q.push('걸리는 부분은 건물 전체인가요, 일부인가요? 그 부분은 내 설계에서 어떤 공간인가요?');
+    } else q.push('일조사선까지 여유가 있다면, 어느 높이에서 여유가 가장 작은가요?');
+    q.push('정북 방향 이웃 대지의 상황이 다르면 이 계산은 어떻게 달라질까요? (이 도구는 반영하지 않아요)');
+  }
+  q.push('크리틱에서 이 숫자들을 설명할 때, 내가 선택한 형태·배치의 어떤 결정이 이 숫자들을 만들었다고 말할 수 있나요?');
+  return q;
+}
+
+// 테스트용 가짜 예시 3개 + 기대값 (실제 설계 아님)
+const SAMPLES = [
+  { name: 'A 정상', input: { zone: '일반', bcrLimit: 60, farLimit: 200, site: 300, footprint: 150, floors: 3, areas: [150, 150, 150], floorH: 3, setback: 3 },
+    checks: r => [['건폐율(%)', 50, r.bcr], ['용적률(%)', 150, r.far], ['건폐율 초과', false, r.bcrOver], ['용적률 초과', false, r.farOver],
+                  ['사선 걸림', false, r.sun.fail], ['건물 높이(m)', 9, r.height], ['필요 이격(m)', 1.5, r.sun.maxReq]] },
+  { name: 'B 면적 초과', input: { zone: '일반', bcrLimit: 60, farLimit: 200, site: 200, footprint: 140, floors: 4, areas: [140, 140, 140, 140], floorH: 3, setback: 6.5 },
+    checks: r => [['건폐율(%)', 70, r.bcr], ['건폐율 초과(%p)', 10, r.bcrOverPt], ['건축면적 초과(㎡)', 20, r.bcrOverArea],
+                  ['용적률(%)', 280, r.far], ['용적률 초과(㎡)', 160, r.farOverArea]] },
+  { name: 'C 사선', input: { zone: '일반', bcrLimit: 60, farLimit: 250, site: 300, footprint: 150, floors: 5, areas: [150, 150, 150, 150, 150], floorH: 3.3, setback: 4 },
+    checks: r => { const t = r.sun.rows; return [['사선 걸림', true, r.sun.fail], ['걸린 층 수', 2, r.sun.failRows.length], ['3층 걸림', false, t[2].fail],
+      ['4층 상단(m)', 13.2, t[3].top], ['4층 필요(m)', 6.6, t[3].req], ['4층 부족(m)', 2.6, t[3].short],
+      ['5층 상단(m)', 16.5, t[4].top], ['5층 필요(m)', 8.25, t[4].req], ['5층 부족(m)', 4.25, t[4].short]]; } }
+];
+// 자체 점검: 각 예시를 계산해 기대값과 비교 (값 비교만, 화면/저장소는 건드리지 않음)
+function runSelfCheck() {
+  return SAMPLES.map(s => {
+    const rows = s.checks(calc(s.input)).map(([label, exp, got]) =>
+      ({ label, exp, got, pass: typeof exp === 'number' ? Math.abs(exp - got) < 0.005 : exp === got }));
+    return { name: s.name, rows, pass: rows.every(x => x.pass) };
+  }).concat([(() => { const rows = geoChecks().map(([label, exp, got]) => ({ label, exp, got, pass: typeof exp === 'number' ? Math.abs(exp - got) < 0.005 : exp === got })); return { name: 'D 도면 계산(DXF)', rows, pass: rows.every(x => x.pass) }; })()]);
+}
+
+/* ---- 도면(Rhino DXF) 계산: 읽기, 면적, 정북 이격 ---- */
+// ponytail: 읽는 것은 LINE·폴리라인·원·호·SPLINE·3DFACE뿐. 블록(INSERT)·메쉬·타원은 못 읽고 개수만 알려 줌. 선택한 건물 도형이 겹치면 면적이 겹쳐 더해짐.
+const UNIT = { mm: 0.001, cm: 0.01, m: 1 };
+const polyArea = pts => Math.abs(pts.reduce((a, p, i) => { const q = pts[(i + 1) % pts.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+// 폴리라인의 bulge(호 모양 꼭짓점)를 짧은 직선들로 바꿈
+function bulgePts(p, q, b) {
+  const th = 4 * Math.atan(b), dx = q[0] - p[0], dy = q[1] - p[1], d = Math.hypot(dx, dy);
+  if (d < 1e-12) return [];
+  const off = (d / 2) / Math.tan(th / 2), cx = (p[0] + q[0]) / 2 - dy / d * off, cy = (p[1] + q[1]) / 2 + dx / d * off;
+  const a0 = Math.atan2(p[1] - cy, p[0] - cx), r = Math.hypot(p[0] - cx, p[1] - cy), n = Math.max(2, Math.ceil(Math.abs(th) / (Math.PI / 36))), out = [];
+  for (let k = 1; k < n; k++) out.push([cx + r * Math.cos(a0 + th * k / n), cy + r * Math.sin(a0 + th * k / n)]);
+  return out;
+}
+function mkPoly(vs, closed) {
+  const out = [];
+  vs.forEach((v, i) => {
+    out.push([v.x, v.y, v.z]);
+    const nx = vs[i + 1] || (closed ? vs[0] : null);
+    if (v.b && nx) bulgePts([v.x, v.y], [nx.x, nx.y], v.b).forEach(p => out.push([p[0], p[1], v.z]));
+  });
+  return out;
+}
+// NURBS 곡선(SPLINE)을 점들로: de Boor 방법, 가중치(w) 있으면 유리식 곡선
+function nurbsPts(p, kn, cp, w) {
+  const n = cp.length, t0 = kn[p], t1 = kn[n], spans = new Set(kn.slice(p, n + 1)).size - 1, N = Math.min(3000, Math.max(48, spans * 32)), out = [];
+  for (let s = 0; s <= N; s++) {
+    const t = t0 + (t1 - t0) * s / N; let k = p; while (k < n - 1 && t >= kn[k + 1]) k++;
+    const d = []; for (let j = 0; j <= p; j++) { const q = cp[j + k - p], ww = w ? w[j + k - p] : 1; d.push([q[0] * ww, q[1] * ww, q[2] * ww, ww]); }
+    for (let r = 1; r <= p; r++) for (let j = p; j >= r; j--) {
+      const den = kn[j + 1 + k - r] - kn[j + k - p], a = den ? (t - kn[j + k - p]) / den : 0;
+      for (let m = 0; m < 4; m++) d[j][m] = (1 - a) * d[j - 1][m] + a * d[j][m];
+    }
+    out.push([d[p][0] / d[p][3], d[p][1] / d[p][3], d[p][2] / d[p][3]]);
+  }
+  return out;
+}
+// ASCII DXF 읽기 → {ents:[{layer,pts:[[x,y,z]],closed,noClose}], unsupported:{종류:개수}, insunits}
+function parseDxf(text) {
+  const res = { ents: [], unsupported: {}, insunits: 0, binary: false, noEntities: false };
+  if (/^AutoCAD Binary DXF/.test(text)) { res.binary = true; return res; }
+  const L = text.split(/\r?\n/), P = [];
+  for (let i = 0; i + 1 < L.length; i += 2) P.push([parseInt(L[i], 10), L[i + 1].trim()]);
+  const hi = P.findIndex(p => p[0] === 9 && p[1] === '$INSUNITS'); if (hi >= 0 && P[hi + 1]) res.insunits = parseInt(P[hi + 1][1]) || 0;
+  let i = P.findIndex((p, k) => k > 0 && p[0] === 2 && p[1] === 'ENTITIES' && P[k - 1][1] === 'SECTION');
+  if (i < 0) { res.noEntities = true; return res; }
+  const raw = []; let cur = null;
+  for (i++; i < P.length; i++) {
+    const [c, v] = P[i];
+    if (c === 0) { if (cur) raw.push(cur); cur = null; if (v === 'ENDSEC') break; cur = { t: v, g: [] }; } else if (cur) cur.g.push([c, v]);
+  }
+  const get = (e, c, d = 0) => { const x = e.g.find(p => p[0] === c); return x ? parseFloat(x[1]) : d; };
+  let pl = null;
+  for (const e of raw) {
+    const ly = e.g.find(p => p[0] === 8), layer = ly ? ly[1] : '0', add = (pts, o = {}) => res.ents.push({ layer, pts, closed: false, ...o });
+    switch (e.t) {
+      case 'LINE': add([[get(e, 10), get(e, 20), get(e, 30)], [get(e, 11), get(e, 21), get(e, 31)]]); break;
+      case 'LWPOLYLINE': {
+        const vs = [], z = get(e, 38);
+        for (const [c, v] of e.g) { if (c === 10) vs.push({ x: parseFloat(v), y: 0, z, b: 0 }); else if (c === 20 && vs.length) vs[vs.length - 1].y = parseFloat(v); else if (c === 42 && vs.length) vs[vs.length - 1].b = parseFloat(v); }
+        const cl = !!(get(e, 70) & 1); add(mkPoly(vs, cl), { closed: cl }); break; }
+      case 'CIRCLE': { const cx = get(e, 10), cy = get(e, 20), cz = get(e, 30), r = get(e, 40);
+        add(Array.from({ length: 72 }, (_, k) => [cx + r * Math.cos(2 * Math.PI * k / 72), cy + r * Math.sin(2 * Math.PI * k / 72), cz]), { closed: true }); break; }
+      case 'ARC': { const cx = get(e, 10), cy = get(e, 20), cz = get(e, 30), r = get(e, 40), a0 = get(e, 50) * Math.PI / 180;
+        let sw = (get(e, 51) - get(e, 50)) * Math.PI / 180; if (sw <= 0) sw += 2 * Math.PI;
+        add(Array.from({ length: 37 }, (_, k) => [cx + r * Math.cos(a0 + sw * k / 36), cy + r * Math.sin(a0 + sw * k / 36), cz])); break; }
+      case 'SPLINE': {
+        const deg = get(e, 71), fl = get(e, 70), kn = [], ws = [], cp = [], fp = [];
+        for (const [c, v] of e.g) {
+          const x = parseFloat(v);
+          if (c === 40) kn.push(x); else if (c === 41) ws.push(x);
+          else if (c === 10) cp.push([x, 0, 0]); else if (c === 20 && cp.length) cp[cp.length - 1][1] = x; else if (c === 30 && cp.length) cp[cp.length - 1][2] = x;
+          else if (c === 11) fp.push([x, 0, 0]); else if (c === 21 && fp.length) fp[fp.length - 1][1] = x; else if (c === 31 && fp.length) fp[fp.length - 1][2] = x;
+        }
+        let pts = (deg >= 1 && cp.length > deg && kn.length === cp.length + deg + 1) ? nurbsPts(deg, kn, cp, ws.length === cp.length ? ws : null) : (fp.length > 1 ? fp : cp);
+        if (pts.length < 2) { res.unsupported.SPLINE = (res.unsupported.SPLINE || 0) + 1; break; }
+        const same = Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) < 1e-6;
+        if (same && pts.length > 3) pts.pop();
+        add(pts, { closed: (!!(fl & 1) || same) && pts.length >= 3 }); break; }
+      case '3DFACE': { const q = [10, 11, 12, 13].map(k => [get(e, k), get(e, k + 10), get(e, k + 20)]); add([...q, q[0]], { noClose: true }); break; }
+      case 'POLYLINE': pl = { layer, flags: get(e, 70), vs: [] }; break;
+      case 'VERTEX': if (pl) pl.vs.push({ x: get(e, 10), y: get(e, 20), z: get(e, 30), b: get(e, 42) }); break;
+      case 'SEQEND': if (pl) { if (pl.flags & (16 | 64)) res.unsupported['POLYLINE(메쉬)'] = (res.unsupported['POLYLINE(메쉬)'] || 0) + 1;
+        else res.ents.push({ layer: pl.layer, pts: mkPoly(pl.vs, !!(pl.flags & 1)), closed: !!(pl.flags & 1) }); pl = null; } break;
+      default: res.unsupported[e.t] = (res.unsupported[e.t] || 0) + 1;
+    }
+  }
+  return res;
+}
+// 읽은 도형 → 미터 단위 도형. 닫힌 도형(선택 가능)과 열린 선으로 나눔. 같은 모양 중복은 하나로.
+function buildShapes(ents, s) {
+  const closed = [], open = [], lines = [], bb = [Infinity, Infinity, -Infinity, -Infinity]; let zmin = Infinity, zmax = -Infinity;
+  for (const e of ents) {
+    const pts = e.pts.map(p => { zmin = Math.min(zmin, p[2] * s); zmax = Math.max(zmax, p[2] * s); return [p[0] * s, p[1] * s]; });
+    for (const p of pts) { bb[0] = Math.min(bb[0], p[0]); bb[1] = Math.min(bb[1], p[1]); bb[2] = Math.max(bb[2], p[0]); bb[3] = Math.max(bb[3], p[1]); }
+    let cl = e.closed;
+    if (!cl && !e.noClose && pts.length > 3 && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) < 1e-6) { pts.pop(); cl = true; }
+    if (cl && pts.length >= 3) closed.push({ pts }); else if (pts.length === 2 && !e.noClose) lines.push({ pts }); else open.push({ pts });
+  }
+  // 끝점이 이어진 선들이 고리를 이루면 닫힌 도형으로
+  const key = p => Math.round(p[0] * 100) + ',' + Math.round(p[1] * 100), adj = new Map(), used = new Set();
+  lines.forEach((l, i) => l.pts.forEach(p => { const k = key(p); if (!adj.has(k)) adj.set(k, []); adj.get(k).push(i); }));
+  lines.forEach((l, i) => {
+    if (used.has(i)) return;
+    const mine = [i], path = [l.pts[0], l.pts[1]], k0 = key(l.pts[0]); let cur = key(l.pts[1]), ok = false;
+    for (let guard = 0; guard < lines.length + 2; guard++) {
+      if (cur === k0) { ok = true; break; }
+      const c = (adj.get(cur) || []).filter(j => !used.has(j) && !mine.includes(j));
+      if ((adj.get(cur) || []).length !== 2 || c.length !== 1) break;
+      const nl = lines[c[0]], np = key(nl.pts[0]) === cur ? nl.pts[1] : nl.pts[0]; mine.push(c[0]); path.push(np); cur = key(np);
+    }
+    if (ok && path.length >= 4) { path.pop(); mine.forEach(j => used.add(j)); closed.push({ pts: path }); }
+  });
+  lines.forEach((l, i) => { if (!used.has(i)) open.push(l); });
+  const seen = new Set(), shapes = []; let dup = 0;
+  for (const c of closed) {
+    const a = polyArea(c.pts), cx = c.pts.reduce((t, p) => t + p[0], 0) / c.pts.length, cy = c.pts.reduce((t, p) => t + p[1], 0) / c.pts.length;
+    const k = Math.round(a * 1000) + '|' + Math.round(cx * 100) + ',' + Math.round(cy * 100);
+    if (seen.has(k)) { dup++; continue; } seen.add(k); shapes.push({ pts: c.pts, area: a });
+  }
+  return { shapes, open, bb, dup, zr: zmax - zmin > 1e-6 ? [zmin, zmax] : null };
+}
+const inPoly = (p, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+const segDist = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = dx * dx + dy * dy, t = l ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy); };
+// 대지 밖에 걸친 건물 꼭짓점 수 (1cm 이내는 경계 위로 봄)
+function outsideCount(site, bldgs) {
+  let n = 0;
+  for (const b of bldgs) for (const p of b) { if (inPoly(p, site)) continue; let m = Infinity; for (let i = 0; i < site.length; i++) m = Math.min(m, segDist(p, site[i], site[(i + 1) % site.length])); if (m > 0.01) n++; }
+  return n;
+}
+// 정북 이격: 건물 각 점에서 정북으로 쏜 선이 대지 경계와 만나는 거리, 대지 꼭짓점에서 남쪽으로 쏜 선이 건물과 만나는 거리 중 가장 짧은 값.
+// deg: 도면 위쪽에서 시계 방향으로 잰 북쪽 각도
+function northSetback(site, bldgs, deg) {
+  const t = deg * Math.PI / 180, sn = Math.sin(t), cs = Math.cos(t), T = p => [p[0] * cs - p[1] * sn, p[0] * sn + p[1] * cs]; // [동쪽, 북쪽]
+  const S = site.map(T), B = bldgs.map(b => b.map(T));
+  const hit = (u, v0, poly, sign) => {
+    let best = null;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      if (Math.min(a[0], b[0]) - 1e-9 > u || Math.max(a[0], b[0]) + 1e-9 < u) continue;
+      const vs = Math.abs(a[0] - b[0]) < 1e-9 ? [a[1], b[1]] : [a[1] + (b[1] - a[1]) * (u - a[0]) / (b[0] - a[0])];
+      for (const v of vs) { const d = (v - v0) * sign; if (d > -1e-9 && (best === null || d < best)) best = Math.max(0, d); }
+    }
+    return best;
+  };
+  let best = null; const upd = d => { if (d !== null && (best === null || d < best)) best = d; };
+  for (const poly of B) for (const p of poly) upd(hit(p[0], p[1], S, 1));
+  for (const p of S) for (const poly of B) upd(hit(p[0], p[1], poly, -1));
+  return best;
+}
+/* ---- 지도(VWorld) 필지: 위경도 → 미터, 북쪽 각도에 맞춰 도면 좌표로 ---- */
+// ponytail: 필지 중심 기준 평면 근사(필지 크기에선 오차 무시). 수 km 넘는 대지는 오차가 커짐. 필지 경계는 연속지적도(참고용)라 공부상 면적과 다를 수 있음.
+const R_EARTH = 6378137;
+function llToLocal(ring) {      // [[경도,위도],…] → {pts:[[동쪽m,북쪽m],…], cen:[경도,위도]} (닫는 점 중복은 제거)
+  let r = ring.slice(); if (r.length > 3 && r[0][0] === r[r.length - 1][0] && r[0][1] === r[r.length - 1][1]) r.pop();
+  const lng0 = r.reduce((a, p) => a + p[0], 0) / r.length, lat0 = r.reduce((a, p) => a + p[1], 0) / r.length, k = Math.PI / 180;
+  return { pts: r.map(p => [(p[0] - lng0) * k * R_EARTH * Math.cos(lat0 * k), (p[1] - lat0) * k * R_EARTH]), cen: [lng0, lat0] };
+}
+// 동쪽·북쪽 좌표 → 도면 좌표 (northSetback의 변환 T의 역변환). deg: 도면 위쪽에서 시계 방향으로 잰 북쪽 각도
+function llToLocalMulti(rings) {   // 여러 필지를 같은 기준점(모든 꼭짓점 평균)으로 미터 변환 → 맞닿은 변의 좌표가 정확히 같아짐
+  const rs = rings.map(r => (r.length > 3 && r[0][0] === r[r.length - 1][0] && r[0][1] === r[r.length - 1][1]) ? r.slice(0, -1) : r.slice()), all = rs.flat();
+  const lng0 = all.reduce((a, p) => a + p[0], 0) / all.length, lat0 = all.reduce((a, p) => a + p[1], 0) / all.length, k = Math.PI / 180;
+  return { list: rs.map(r => r.map(p => [(p[0] - lng0) * k * R_EARTH * Math.cos(lat0 * k), (p[1] - lat0) * k * R_EARTH])), cen: [lng0, lat0] };
+}
+const enuToCad = (p, deg) => { const t = deg * Math.PI / 180, sn = Math.sin(t), cs = Math.cos(t); return [p[0] * cs + p[1] * sn, -p[0] * sn + p[1] * cs]; };
+// 용도지역 → [이름, 일조사선 구분(전용/일반/그외), 건폐율 상한%, 용적률 상한%]. 국토계획법 시행령 상한이고 지자체 조례는 더 낮을 수 있음 — 법조문 최신본 확인 필요
+const ZONES = [['제1종전용주거', '전용', 50, 100], ['제2종전용주거', '전용', 50, 150], ['제1종일반주거', '일반', 60, 200], ['제2종일반주거', '일반', 60, 250], ['제3종일반주거', '일반', 50, 300],
+  ['준주거', '그외', 70, 500], ['중심상업', '그외', 90, 1500], ['일반상업', '그외', 80, 1300], ['근린상업', '그외', 70, 900], ['유통상업', '그외', 80, 1100],
+  ['전용공업', '그외', 70, 300], ['일반공업', '그외', 70, 350], ['준공업', '그외', 70, 400], ['보전녹지', '그외', 20, 80], ['생산녹지', '그외', 20, 100], ['자연녹지', '그외', 20, 100]];
+const zoneInfo = name => ZONES.find(z => String(name).replace(/\s/g, '').includes(z[0])) || null;
+// 대구 안인지 (VWorld 주소 앞머리). 군위군(2023 편입)도 "대구광역시 군위군"으로 시작함. ponytail: 대구 조례의 건폐율·용적률 수치는 원문을 못 구해 넣지 않음 — 학생이 토지이용계획확인서로 확인해 입력
+const isDaegu = addr => /^대구/.test(String(addr).trim());
+const DAEGU_BOUNDS = [[35.55, 128.28], [36.30, 129.00]];   // 군위군까지 넉넉한 사각형(지도 이동 범위용, 경계 판정은 주소로)
+
+// 도면 계산 점검용 기대값
+function geoChecks() {
+  const hd = '0\nSECTION\n2\nENTITIES\n', tl = '0\nENDSEC\n0\nEOF\n';
+  const sq = hd + '0\nLWPOLYLINE\n8\nL\n70\n1\n10\n0\n20\n0\n10\n10\n20\n0\n10\n10\n20\n10\n10\n0\n20\n10\n' + tl;
+  const ln = (a, b, c, d) => `0\nLINE\n8\nL\n10\n${a}\n20\n${b}\n11\n${c}\n21\n${d}\n`;
+  const box = hd + ln(0, 0, 4, 0) + ln(4, 0, 4, 3) + ln(4, 3, 0, 3) + ln(0, 3, 0, 0) + tl;
+  const semi = hd + '0\nLWPOLYLINE\n8\nL\n70\n1\n10\n0\n20\n0\n42\n1\n10\n2\n20\n0\n' + tl;
+  const sh = x => buildShapes(parseDxf(x).ents, 1);
+  const w = Math.SQRT1_2, cps = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]], ws = [1, w, 1, w, 1, w, 1, w, 1];
+  const spl = hd + '0\nSPLINE\n8\nL\n70\n8\n71\n2\n72\n12\n73\n9\n' + [0, 0, 0, .25, .25, .5, .5, .75, .75, 1, 1, 1].map(k => '40\n' + k + '\n').join('') + ws.map(k => '41\n' + k + '\n').join('') + cps.map(c => '10\n' + c[0] + '\n20\n' + c[1] + '\n30\n0\n').join('') + tl;
+  const sp = sh(spl);
+  const site = [[0, 0], [10, 0], [10, 10], [0, 10]], bld = [[2, 2], [8, 2], [8, 6], [2, 6]];
+  return [['사각형 면적(㎡)', 100, sh(sq).shapes[0].area], ['선 4개가 이어진 도형 수', 1, sh(box).shapes.length], ['선 4개 도형 면적(㎡)', 12, sh(box).shapes[0].area],
+    ['호(bulge) 반원 면적(㎡)', 1.571, sh(semi).shapes[0].area], ['SPLINE 원(반지름 1) 도형 수', 1, sp.shapes.length], ['SPLINE 원 면적(㎡, 원주율 3.1416)', Math.PI, sp.shapes[0].area], ['정북 이격(m, 북쪽 0도)', 4, northSetback(site, [bld], 0)],
+    ['정북 이격(m, 북쪽 90도)', 2, northSetback(site, [bld], 90)], ['대지 밖 꼭짓점 수', 0, outsideCount(site, [bld])],
+    ['지도 필지 면적(㎡, 적도 0.001°×0.001°)', Math.pow(0.001 * Math.PI / 180 * R_EARTH, 2), polyArea(llToLocal([[0, 0], [0.001, 0], [0.001, 0.001], [0, 0.001], [0, 0]]).pts)],
+    ['지도 필지를 북쪽 30°로 돌려도 정북 이격(m)', 4, (() => { const E = site.map(p => enuToCad(p, 30)), B = bld.map(p => enuToCad(p, 30)); return northSetback(E, [B], 30); })()],
+    ['용도지역 "제2종일반주거지역" → 일조사선 구분', '일반', (zoneInfo('제2종일반주거지역') || [])[1]],
+    ['여러 필지 좌표 공유(맞닿은 변이 같은 좌표)', true, (() => { const m = llToLocalMulti([[[0, 0], [.001, 0], [.001, .001], [0, .001], [0, 0]], [[.001, 0], [.002, 0], [.002, .001], [.001, .001], [.001, 0]]]); return Math.abs(m.list[0][1][0] - m.list[1][0][0]) < 1e-9 && Math.abs(m.list[0][1][1] - m.list[1][0][1]) < 1e-9; })()],
+    ['대구 주소 판별(대구광역시 군위군)', true, isDaegu('대구광역시 군위군 군위읍 1')], ['대구 주소 판별(서울특별시 중구)', false, isDaegu('서울특별시 중구 태평로1가 1')]];
+}
+/* ===== RULES 끝 ===== */
+
+/* =====================================================================
+   [2] 화면 (입력 읽기, 결과 그리기, SVG 단면)
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const show = (el, on = true) => el.classList.toggle('hide', !on);
+const msg = (el, list) => { el.innerHTML = list.map(esc).join('<br>'); show(el, list.length > 0); if (el.id === 'cadMsg' && list.length) { const d = $('sec-cad'); d.classList.remove('idle'); d.open = true; } };
+
+// 용도지역 안내
+function zoneHint() {
+  $('zoneHint').textContent = RULES.sunZones.includes($('zone').value) ? '정북일조사선을 계산해요.' : '이 도구에서는 일조사선 계산 대상이 아님 (건폐율·용적률만 계산해요).';
+}
+// 층별 개별 입력칸 만들기 (기존 값 유지)
+function renderPerFloor() {
+  const on = $('perChk').checked, n = Math.min(30, Math.max(0, parseInt($('floors').value) || 0));
+  $('floorArea').disabled = on; show($('perFloor'), on);
+  if (!on) return;
+  const old = [...$('perFloor').querySelectorAll('input')].map(i => i.value);
+  $('perFloor').innerHTML = Array.from({ length: n }, (_, i) =>
+    `<div><label for="fa${i}">${i + 1}층 바닥면적 (㎡)</label><input type="number" id="fa${i}" step="any" inputmode="decimal" value="${old[i] ?? $('floorArea').value}"></div>`).join('');
+}
+// 입력 읽기 + 쉬운 말 오류 안내
+function readInput() {
+  const errs = [];
+  const num = (id, name, o = {}) => {
+    const raw = $(id).value.trim();
+    if (raw === '') { errs.push(`‘${name}’ 칸이 비어 있거나 숫자가 아니에요. 숫자를 적어 주세요.`); return null; }
+    const v = Number(raw);
+    if (!isFinite(v)) { errs.push(`‘${name}’ 칸은 숫자로 적어 주세요.`); return null; }
+    if (v < 0) { errs.push(`‘${name}’ 칸에 음수(마이너스)가 들어 있어요. 0 이상으로 적어 주세요.`); return null; }
+    if (o.gt0 && v <= 0) { errs.push(`‘${name}’ 칸은 0보다 큰 숫자여야 해요.`); return null; }
+    return v;
+  };
+  const zone = $('zone').value, sunOn = RULES.sunZones.includes(zone);
+  const inp = { zone,
+    bcrLimit: num('bcrLimit', '건폐율 상한', { gt0: 1 }), farLimit: num('farLimit', '용적률 상한', { gt0: 1 }),
+    site: num('site', '대지면적', { gt0: 1 }), footprint: num('footprint', '건축면적'),
+    floors: num('floors', '층수', { gt0: 1 }), floorH: num('floorH', '층고', { gt0: 1 }),
+    setback: sunOn ? num('setback', '정북 방향 이격 거리') : (parseFloat($('setback').value) || 0), areas: [] };
+  if (inp.bcrLimit > 100) errs.push('건폐율 상한은 100%를 넘을 수 없어요.');
+  if (inp.floors !== null && (!Number.isInteger(inp.floors) || inp.floors > 30)) errs.push('‘층수’는 1~30 사이의 정수로 적어 주세요.');
+  else if (inp.floors !== null) {
+    if ($('perChk').checked) for (let i = 0; i < inp.floors; i++) { const v = num('fa' + i, `${i + 1}층 바닥면적`); if (v !== null) inp.areas.push(v); }
+    else { const v = num('floorArea', '층별 바닥면적'); if (v !== null) inp.areas = Array(inp.floors).fill(v); }
+  }
+  if (inp.site && inp.footprint !== null && inp.footprint > inp.site) errs.push('건축면적이 대지면적보다 커요. 숫자를 다시 확인해 주세요.');
+  return { inp, errs };
+}
+
+// SVG 단면: 정북 경계선, 건물, 일조 한계선(10m까지 수직 후 1:2 사선), 걸리는 부분은 빨강+빗금
+function drawSection(inp, r) {
+  const s = r.sun, R = RULES, D = 8;                       // D: 건물 단면 폭(개략 표현, 실제 폭 아님)
+  const yMax = Math.max(r.height, R.thresholdH + 2) * 1.08 + 1;
+  const xMin = -4, xMax = Math.max(inp.setback + D, yMax * R.ratio) + 1.5;
+  const W = 780, pL = 14, pR = 150, pT = 24, pB = 44;
+  const sc = Math.min((W - pL - pR) / (xMax - xMin), 440 / yMax), Hp = yMax * sc + pT + pB;
+  const X = x => (pL + (x - xMin) * sc).toFixed(1), Y = y => (pT + (yMax - y) * sc).toFixed(1);
+  const T = R.thresholdH, m = R.minSetback;
+  const env = [[m, 0], [m, T], [T * R.ratio, T], [yMax * R.ratio, yMax]];
+  const zonePts = [[0, 0], ...env, [0, yMax]].map(p => X(p[0]) + ',' + Y(p[1])).join(' ');
+  let g = `<defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#e5483d"/><line x1="0" y1="0" x2="0" y2="8" stroke="#fff" stroke-width="3"/></pattern></defs>`;
+  g += `<rect x="${X(xMin)}" y="${Y(yMax)}" width="${((0 - xMin) * sc).toFixed(1)}" height="${(yMax * sc).toFixed(1)}" fill="#ececec"/>`;
+  g += `<text x="${X(xMin) * 1 + 6}" y="${Y(yMax) * 1 + 20}" font-size="17" fill="#555">정북 방향</text><text x="${X(xMin) * 1 + 6}" y="${Y(yMax) * 1 + 38}" font-size="17" fill="#555">이웃 대지</text>`;
+  g += `<polygon points="${zonePts}" fill="#ffb347" fill-opacity=".28"/>`;
+  g += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(yMax)}" stroke="#222" stroke-width="2.5" stroke-dasharray="8 5"/>`;
+  g += `<text x="${X(0)}" y="14" font-size="17" font-weight="bold" text-anchor="middle">정북 경계선 (← 북)</text>`;
+  g += `<line x1="${X(xMin)}" y1="${Y(T)}" x2="${X(xMax)}" y2="${Y(T)}" stroke="#999" stroke-dasharray="2 4"/><text x="${X(xMin) * 1 + 4}" y="${Y(T) * 1 - 4}" font-size="17" fill="#666">${T}m</text>`;
+  const step = Math.max(1, Math.ceil(16 / (sc * inp.floorH)));
+  for (let i = 1; i <= inp.floors; i++) {
+    const y0 = (i - 1) * inp.floorH, y1 = i * inp.floorH, x0 = inp.setback;
+    const cut = Math.min(Math.max(s.startH, y0), y1);           // 이 층에서 걸리기 시작하는 높이
+    const rect = (a, b, fill) => `<rect x="${X(x0)}" y="${Y(b)}" width="${(D * sc).toFixed(1)}" height="${((b - a) * sc).toFixed(1)}" fill="${fill}"/>`;
+    if (cut > y0) g += rect(y0, cut, '#bcd3f5');
+    if (y1 > cut + EPS) g += rect(cut, y1, 'url(#hatch)');
+    g += `<rect x="${X(x0)}" y="${Y(y1)}" width="${(D * sc).toFixed(1)}" height="${(inp.floorH * sc).toFixed(1)}" fill="none" stroke="#244" stroke-width="1.5"/>`;
+    if (i % step === 0 || i === inp.floors) g += `<text x="${X(x0 + D) * 1 + 6}" y="${Y(y1) * 1 + 5}" font-size="17">${i}층 상단 ${f(y1)}m</text>`;
+  }
+  g += `<polyline points="${env.map(p => X(p[0]) + ',' + Y(p[1])).join(' ')}" fill="none" stroke="#e07b00" stroke-width="3.5"/>`;
+  g += `<line x1="${X(xMin)}" y1="${Y(0)}" x2="${X(xMax)}" y2="${Y(0)}" stroke="#222" stroke-width="2"/>`;
+  g += `<line x1="${X(0)}" y1="${Y(0) * 1 + 18}" x2="${X(inp.setback)}" y2="${Y(0) * 1 + 18}" stroke="#222" stroke-width="2"/><text x="${(X(0) * 1 + X(inp.setback) * 1) / 2}" y="${Y(0) * 1 + 36}" font-size="17" text-anchor="middle">실제 이격 ${f(inp.setback)}m</text>`;
+  const alt = s.fail ? `${s.failRows.length}개 층이 정북일조사선에 걸림` : '모든 층이 정북일조사선 안에 들어옴';
+  return `<svg viewBox="0 0 ${W} ${Hp.toFixed(0)}" role="img" aria-label="정북일조사선 단면 그림: ${alt}">${g}</svg>
+  <div class="legend"><span><i style="background:#bcd3f5"></i>통과하는 부분</span><span><i style="background:repeating-linear-gradient(45deg,#e5483d 0 3px,#fff 3px 6px)"></i>일조사선에 걸리는 부분</span>
+  <span><i style="background:#ffd9a0;border-color:#e07b00"></i>일조 한계선 안쪽(건물이 들어가면 걸림): ${m}m 이격으로 ${T}m까지 수직, 그 위는 높이의 1/2 (1:2 사선)</span></div>
+  <p class="hint">휴대폰에서는 그림을 옆으로 밀어 오른쪽 글씨까지 볼 수 있어요. 건물 단면 폭(${D}m)은 개략 표현이에요. 건물 북쪽 외벽이 모든 층 같은 위치라고 가정했어요.</p>`;
+}
+
+// 결과 전체 그리기
+let lastExplain = null;
+function renderResults(inp, r, e) {
+  const tile = (name, big, sub, st) => `<div class="tile ${st} k-${{ 건폐율: 'bcr', 용적률: 'far', 정북일조사선: 'sun' }[name]}"><div class="tn"><span>${name}</span><span class="pill ${st}">${st === 'ok' ? '통과' : st === 'bad' ? (name === '정북일조사선' ? '걸림' : '초과') : '제외'}</span></div><div class="tbig">${big}</div><div class="ts">${sub}</div></div>`, sn = r.sun;
+  $('resNums').innerHTML = '<div class="tiles">' +
+    tile('건폐율', f(r.bcr) + '%', `상한 ${f(inp.bcrLimit)}% · ` + (r.bcrOver ? `${f(r.bcrOverPt)}%p(${f(r.bcrOverArea)}㎡) 초과 ✖` : '상한 이내 ✔'), r.bcrOver ? 'bad' : 'ok') +
+    tile('용적률', f(r.far) + '%', `상한 ${f(inp.farLimit)}% · ` + (r.farOver ? `${f(r.farOverPt)}%p(${f(r.farOverArea)}㎡) 초과 ✖` : '상한 이내 ✔') + `<br>지상 연면적 ${f(r.total)}㎡`, r.farOver ? 'bad' : 'ok') +
+    tile('정북일조사선', sn ? (sn.fail ? `${sn.failRows.length}개 층 걸림` : '통과') : '대상 아님',
+      sn ? (sn.fail ? `최대 부족 이격 ${f(sn.maxShort)}m ✖` : `높이 ${f(r.height)}m · 필요 이격 최대 ${f(sn.maxReq)}m ✔`) : '이 도구에서는 계산 대상이 아님', sn ? (sn.fail ? 'bad' : 'ok') : 'na') + '</div>';
+  const s = r.sun;
+  if (!s) {
+    $('sunBox').innerHTML = '<p class="warn">이 도구에서는 일조사선 계산 대상이 아님 (용도지역: 그 외)</p>';
+    $('svgBox').innerHTML = '<p>일조사선 계산 대상이 아니라 단면 그림을 그리지 않아요.</p>';
+  } else {
+    $('sunBox').innerHTML = `<p>${s.fail ? `<span class="bad">걸림 ✖</span> — ${s.failRows.map(x => x.floor + '층').join(', ')} / 걸리는 높이 구간: ${f(s.startH)}m 초과 ~ ${f(r.height)}m / 최대 부족 이격 ${f(s.maxShort)}m` : '<span class="ok">모든 층 통과 ✔</span>'}</p>
+      <div class="tw"><table><tr><th>층</th><th>상단 높이(m)</th><th>필요 이격(m)</th><th>실제 이격(m)</th><th>부족(m)</th><th>판정</th></tr>` +
+      s.rows.map(x => `<tr class="${x.fail ? 'fail' : ''}"><td>${x.floor}층</td><td>${f(x.top)}</td><td>${f(x.req)}</td><td>${f(x.actual)}</td><td>${x.fail ? f(x.short) : '-'}</td><td>${x.fail ? '걸림 ✖' : '통과 ✔'}</td></tr>`).join('') + '</table></div>';
+    $('svgBox').innerHTML = '<div class="tw">' + drawSection(inp, r) + '</div>';
+  }
+  $('reasons').innerHTML = [e.bcr, e.far, e.sun].map(x => `<div class="card steps"><h3>${x.title}</h3>
+    <p><b>① 무엇을 계산했나</b> ${esc(x.what)}</p><p><b>② 결과</b> ${esc(x.result)}</p>
+    ${x.na ? '' : `<p><b>③ 이 규정이 왜 있나</b> ${esc(x.why)}</p><p><b>④ 그래서 이 부분이 걸린다/안 걸린다</b> ${esc(x.so)}</p>`}
+    <div class="line"><b>크리틱용 한 줄</b><br>“${esc(x.line)}”</div></div>`).join('');
+  $('oneLines').innerHTML = [e.bcr, e.far, e.sun].map(x => `<div class="line"><b>${esc(x.title)}</b><br>“${esc(x.line)}”</div>`).join('');
+  $('qs').innerHTML = questions(inp, r).map(q => `<li>${esc(q)}</li>`).join('');
+  const mine = $('myExp').value.trim();
+  $('cmpMine').innerHTML = `<div><b>내가 먼저 적은 설명</b>\n${mine ? esc(mine) : '(적지 않았어요. 다음엔 결과 보기 전에 한번 적어 보세요.)'}</div><div><b>도구의 설명 (규칙 기반, AI 아님)</b>\n${esc(e.summary)}</div>`;
+  show($('empty'), false); show($('results'));
+}
+
+// 수정 전/후 비교: 이전 결과는 localStorage에 저장
+const KEY_PREV = 'lawTool.prev.v1', KEY_REC = 'lawTool.records.v1';
+function snapshot(inp, r) {
+  return { ts: Date.now(), site: inp.site, footprint: inp.footprint, floors: inp.floors, total: r.total, floorH: inp.floorH,
+    setback: r.sun ? inp.setback : null, height: r.height, bcr: r.bcr, bcrOverPt: r.bcrOverPt, bcrOverArea: r.bcrOverArea,
+    far: r.far, farOverPt: r.farOverPt, farOverArea: r.farOverArea,
+    failCount: r.sun ? r.sun.failRows.length : null, maxShort: r.sun ? r.sun.maxShort : null, startH: r.sun ? (r.sun.fail ? r.sun.startH : null) : null };
+}
+const CMP = [['대지면적(㎡)', 'site'], ['건축면적(㎡)', 'footprint'], ['층수', 'floors'], ['지상 연면적(㎡)', 'total'], ['층고(m)', 'floorH'], ['정북 이격(m)', 'setback'], ['건물 높이(m)', 'height'],
+  ['건폐율(%)', 'bcr'], ['건폐율 초과(%p)', 'bcrOverPt'], ['건축면적 초과(㎡)', 'bcrOverArea'], ['용적률(%)', 'far'], ['용적률 초과(%p)', 'farOverPt'], ['연면적 초과(㎡)', 'farOverArea'],
+  ['일조 걸린 층 수', 'failCount'], ['일조 최대 부족 이격(m)', 'maxShort'], ['일조 걸리기 시작하는 높이(m)', 'startH']];
+function renderCompare(prev, cur) {
+  if (!prev) { $('cmpPrev').innerHTML = '<p>아직 이전 결과가 없어요. 숫자를 바꿔 다시 "결과 보기"를 누르면 이전 결과와 나란히 보여 줘요.</p>'; return; }
+  const d = (a, b) => { if (a == null || b == null) return '-'; const v = b - a; return Math.abs(v) < 1e-9 ? '변화 없음' : (v > 0 ? '+' : '') + f(v); };
+  $('cmpPrev').innerHTML = `<p class="hint">이전 계산: ${fmtTs(prev.ts)} → 지금</p><div class="tw"><table><tr><th>항목</th><th>이전</th><th>지금</th><th>변화</th></tr>` +
+    CMP.map(([l, k]) => `<tr><td>${l}</td><td>${f(prev[k])}</td><td>${f(cur[k])}</td><td>${d(prev[k], cur[k])}</td></tr>`).join('') + '</table></div>';
+}
+
+/* =====================================================================
+   [3] 기록 (타이머, localStorage 저장, 요약, CSV)
+   ===================================================================== */
+const SR_EXTRA = ['주차', '조경', '도로사선', '지구단위계획', '조례 세부', '기타'];
+const ld = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
+const sv = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+const p2 = n => String(n).padStart(2, '0');
+const fmtTs = t => { const d = new Date(t); return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`; };
+
+let session = null, timerId = null;       // session: {start, end, calcs, usedExample, alias, group, mode, baseline}
+function tick() {
+  if (!session || session.end) return;
+  const sec = Math.floor((Date.now() - session.start) / 1000);
+  $('sessState').innerHTML = `<span id="timer">● 기록 중 ${p2(Math.floor(sec / 60))}:${p2(sec % 60)}</span> · 계산 ${session.calcs}회 <button id="btnEnd" class="sub">사용 종료</button>`;
+  $('btnEnd').onclick = endSession;
+}
+function startSession() {
+  const alias = $('alias').value.trim(), bl = $('baseline').value.trim();
+  const errs = [];
+  if (!alias) errs.push('별칭을 적어 주세요. 실명 말고 별명이면 돼요.');
+  if (bl !== '' && !(Number(bl) >= 0)) errs.push('기준선(분)은 0 이상의 숫자로 적어 주세요.');
+  msg($('sessMsg'), errs); if (errs.length) return;
+  session = { start: Date.now(), end: null, calcs: 0, usedExample: false, alias, group: $('group').value, mode: $('mode').value, baseline: bl === '' ? null : Number(bl) };
+  ['alias', 'group', 'mode', 'baseline', 'btnStart'].forEach(i => $(i).disabled = true);
+  tick(); timerId = setInterval(tick, 1000);
+}
+function endSession() {
+  session.end = Date.now(); clearInterval(timerId);
+  $('sessState').innerHTML = `사용 시간 ${f((session.end - session.start) / 60000, 1)}분 · 계산 ${session.calcs}회 (아래에 이해도를 기록하면 저장돼요)`;
+  show($('seniorBox'), session.group === '4학년 선배'); show($('endForm'));
+  $('endForm').scrollIntoView({ behavior: 'smooth' });
+}
+function saveRecord() {
+  if (!$('score').value || !$('yn').value) { $('saveMsg').textContent = '이해도 점수와 예/애매/아니오를 모두 골라 주세요.'; return; }
+  let mode = session.mode;
+  if (mode === '실사용' && session.usedExample && !confirm('이번 사용 중 "예시 불러오기"를 썼어요.\n[확인] 실사용으로 저장 / [취소] 예시 테스트로 저장')) mode = '예시 테스트';
+  const extra = [...document.querySelectorAll('#srExtra input:checked')].map(i => i.value);
+  const rec = { id: session.start, alias: session.alias, group: session.group, mode, start: session.start, end: session.end,
+    minutes: Math.round((session.end - session.start) / 6000) / 10, baseline: session.baseline, calcs: session.calcs,
+    score: Number($('score').value), yn: $('yn').value,
+    srNote: session.group === '4학년 선배' ? $('srNote').value.trim() : '', srLaw: session.group === '4학년 선배' ? $('srLaw').value.trim() : '', srExtra: extra };
+  const all = ld(KEY_REC, []); all.push(rec);
+  if (!sv(KEY_REC, all)) { $('saveMsg').textContent = '이 브라우저에서는 저장이 막혀 있어요. (시크릿 모드이거나 저장 차단일 수 있어요)'; return; }
+  session = null; clearInterval(timerId);
+  ['alias', 'group', 'mode', 'baseline', 'btnStart'].forEach(i => $(i).disabled = false);
+  $('sessState').textContent = `저장했어요 (${mode}).`; show($('endForm'), false);
+  ['score', 'yn', 'srNote', 'srLaw'].forEach(i => $(i).value = ''); document.querySelectorAll('#srExtra input').forEach(i => i.checked = false);
+  $('saveMsg').textContent = ''; renderSummary();
+}
+
+// 요약: "실사용" 기록만으로 계산, 항상 N 함께 표시
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+function renderSummary() {
+  const all = ld(KEY_REC, []), real = all.filter(r => r.mode === '실사용'), N = real.length;
+  let h = `<p>실사용 기록 <b>${N}건</b>${all.length - N ? ` (예시 테스트 ${all.length - N}건은 제외)` : ''}</p>`;
+  if (N) {
+    const wb = real.filter(r => r.baseline !== null);
+    const aMin = avg(real.map(r => r.minutes)), aBase = avg(wb.map(r => r.baseline)), aDiff = avg(wb.map(r => r.minutes - r.baseline));
+    const yn = k => real.filter(r => r.yn === k).length;
+    h += `<div class="tw"><table><tr><th>지표</th><th>값</th></tr>
+      <tr><td>총 사용(계산) 횟수</td><td>${real.reduce((a, r) => a + r.calcs, 0)}회 (평균 ${f(avg(real.map(r => r.calcs)), 1)}회)</td></tr>
+      <tr><td>평균 걸린 시간 (도구 사용)</td><td>${f(aMin, 1)}분</td></tr>
+      <tr><td>평균 기준선 (평소 직접 확인)</td><td>${aBase === null ? '-' : f(aBase, 1) + '분 (기준선 입력 ' + wb.length + '명)'}</td></tr>
+      <tr><td>기준선 대비 차이 (도구 − 기준선, 음수면 도구가 더 짧음)</td><td>${aDiff === null ? '-' : (aDiff > 0 ? '+' : '') + f(aDiff, 1) + '분'}</td></tr>
+      <tr><td>이해도 평균 (1~5)</td><td>${f(avg(real.map(r => r.score)), 2)}점</td></tr>
+      <tr><td>설명 가능? 예 / 애매 / 아니오</td><td>${yn('예')} / ${yn('애매')} / ${yn('아니오')}</td></tr></table></div>
+      <p class="hint">걸린 시간은 "사용 시작~종료" 전체이고, 이해도는 본인이 매긴 점수예요.</p>`;
+  }
+  const sr = all.filter(r => r.srNote || r.srLaw || r.srExtra.length);
+  if (sr.length) h += `<h3>4학년 선배 의견 (모든 기록에서 모음)</h3><ul class="plain">` +
+    sr.map(r => `<li>${esc(r.alias)}: ${esc(r.srNote)} ${r.srLaw ? `[근거: ${esc(r.srLaw)}]` : ''} ${r.srExtra.length ? `[추가 필요: ${esc(r.srExtra.join(', '))}]` : ''}</li>`).join('') + '</ul>';
+  $('sumOut').innerHTML = h;
+}
+function exportCsv() {
+  const all = ld(KEY_REC, []);
+  if (!all.length) { alert('내보낼 기록이 없어요.'); return; }
+  // 엑셀에서 수식으로 실행되지 않도록 = + - @ 로 시작하는 글자 앞에 ' 를 붙임
+  const cell = v => { let s = v === null || v === undefined ? '' : String(v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  const head = ['별칭', '구분', '기록종류', '시작시각', '종료시각', '걸린시간(분)', '기준선(분)', '기준선대비차이(분)', '사용횟수', '이해도(1-5)', '설명가능', '선배_아쉬운점', '선배_근거조문', '선배_추가법규'];
+  const rows = all.map(r => [r.alias, r.group, r.mode, fmtTs(r.start), fmtTs(r.end), r.minutes, r.baseline, r.baseline === null ? '' : Math.round((r.minutes - r.baseline) * 10) / 10, r.calcs, r.score, r.yn, r.srNote, r.srLaw, r.srExtra.join('; ')]);
+  const csv = '﻿' + [head, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = '사용기록.csv';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* =====================================================================
+   [4] 연결 (버튼 동작)
+   ===================================================================== */
+function onCalc() {
+  show($('calcMsg'), false); msg($('inErr'), []);
+  if (!session || session.end) { msg($('calcMsg'), ['먼저 위쪽 "0. 사용 기록 시작"에서 별칭을 적고 "사용 시작"을 눌러 주세요. (타이머가 켜져요)']); return; }
+  const { inp, errs } = readInput();
+  if (errs.length) { msg($('inErr'), errs); show($('results'), false); $('inErr').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  session.calcs++; tick();
+  const r = calc(inp), e = explain(inp, r), cur = snapshot(inp, r);
+  renderResults(inp, r, e);
+  renderCompare(ld(KEY_PREV, null), cur);
+  sv(KEY_PREV, cur);
+  $('results').scrollIntoView({ behavior: 'smooth' });
+}
+function loadExample(i) {
+  const x = SAMPLES[i].input, set = (id, v) => $(id).value = v;
+  set('zone', x.zone); set('bcrLimit', x.bcrLimit); set('farLimit', x.farLimit); set('site', x.site); set('footprint', x.footprint);
+  set('floors', x.floors); set('floorArea', x.areas[0]); set('floorH', x.floorH); set('setback', x.setback);
+  $('perChk').checked = false; renderPerFloor(); zoneHint(); msg($('inErr'), []);
+  if (session) session.usedExample = true;
+}
+function showSelfCheck() {
+  const res = runSelfCheck();
+  $('selfOut').innerHTML = res.map(s => `<h3>${s.name}: ${s.pass ? '<span class="ok">전체 통과 ✔</span>' : '<span class="bad">실패 ✖</span>'}</h3><div class="tw"><table><tr><th>항목</th><th>기대값</th><th>계산값</th><th>결과</th></tr>` +
+    s.rows.map(x => `<tr class="${x.pass ? '' : 'fail'}"><td>${x.label}</td><td>${String(typeof x.exp === 'number' ? f(x.exp) : x.exp)}</td><td>${String(typeof x.got === 'number' ? f(x.got) : x.got)}</td><td>${x.pass ? '통과' : '실패'}</td></tr>`).join('') + '</table></div>').join('') +
+    `<p><b>${res.every(s => s.pass) ? '세 예시 모두 기대값과 일치해요.' : '기대값과 다른 항목이 있어요.'}</b> <span class="bad">(실제 설계 아님)</span></p>`;
+}
+
+
+/* ---- 도면(DXF)·지도 이미지 화면: 그리기, 확인, 땅 지정, 입력칸 채우기 ---- */
+// ponytail: 지도는 올린 이미지 위에 찍는 방식(외부 통신 없음). DXF와 지도는 좌표가 달라 한 화면에 겹쳐 쓰지 않음.
+let cad = null, cadDown = null, cadDragged = false;
+const TOOL_HINT = { bld: '건물 윤곽(닫힌 선)을 눌러 고르세요. 다시 누르면 취소돼요. 여러 개 골라도 되지만 서로 겹치는 도형을 같이 고르면 면적이 겹쳐 더해져요.',
+  sel: '도면에 있는 대지 경계(닫힌 선)를 한 번 눌러 고르세요.',
+  draw: '대지 모서리를 순서대로 눌러 점을 찍으세요. 이미 그린 도형의 꼭짓점 가까이를 누르면 그 점에 붙어요. 마지막에 "완성"을 누르세요.',
+  bdraw: '건물 모서리를 순서대로 눌러 점을 찍고 "완성"을 누르세요. 건물이 여러 덩어리면 하나씩 그리면 돼요.',
+  scale: '지도에서 거리를 아는 두 점(예: 축척 막대의 양 끝)을 차례로 누르고, 그 실제 거리(m)를 적은 뒤 "축척 적용"을 누르세요. 확대해서 누르면 더 정확해요.',
+  move: '지도에서 가져온 대지를 끌어서 건물 위치에 맞추세요. 건물 방향이 안 맞으면 "북쪽 방향(도)"을 바꾸면 대지가 돌아가요. 건물은 움직이지 않아요.' };
+const cadBase = extra => Object.assign({ raw: null, un: '', shapes: [], open: [], dup: 0, zr: null, bld: new Set(), site: null, drawn: null, bldDrawn: [], pts: [], cal: [], s: 1, map: null, tool: 'bld', ok: false }, extra);
+function loadDxf(text) { loadParsed(parseDxf(text)); }
+// DXF·3dm 공통: 읽은 곡선 목록 d({ents, unsupported, insunits, binary, noEntities}) → 도면 화면. unit이 있으면 단위 칸을 그 값으로
+function loadParsed(d, unit) {
+  show($('cadWork'), false);
+  const un = Object.entries(d.unsupported).map(([k, v]) => `${k} ${v}개`).join(', ');
+  if (d.binary) return msg($('cadMsg'), ['바이너리 DXF라서 읽을 수 없어요. Rhino 내보내기 옵션에서 ASCII로 저장해 주세요.']);
+  if (d.noEntities || !d.ents.length) return msg($('cadMsg'), ['읽을 수 있는 선이 없어요. 건물 윤곽을 닫힌 곡선(선·폴리라인·곡선)으로 만들어 올렸는지 확인해 주세요.' + (un ? ` (읽지 못한 도형: ${un})` : '')]);
+  msg($('cadMsg'), []);
+  cad = cadBase({ raw: d, un });
+  const u = unit || { 4: 'mm', 5: 'cm', 6: 'm' }[d.insunits]; if (u) $('dxfUnit').value = u;
+  show($('cadWork')); show($('cadPick'), false); show($('btnCadOk')); $('cadBg').innerHTML = '';
+  cadRebuild(true);
+}
+// 지도 필지(parcel)를 도면 좌표의 대지(cad.drawn)로 놓기. center=true면 고른 건물(없으면 도면) 중심에 맞춤. 북쪽 각도가 바뀌면 필지가 그 중심을 축으로 돌아감
+let parcel = null;
+function applyParcel(center) {
+  if (!cad || !parcel || cad.map) return;
+  if (center || !cad.pOff) {
+    const bp = cad.bld.size ? [...cad.bld].flatMap(i => cad.shapes[i].pts) : cad.bldDrawn.flat();
+    cad.pOff = bp.length ? [bp.reduce((a, p) => a + p[0], 0) / bp.length, bp.reduce((a, p) => a + p[1], 0) / bp.length]
+                         : cad.bb ? [(cad.bb[0] + cad.bb[2]) / 2, (cad.bb[1] + cad.bb[3]) / 2] : [0, 0];
+  }
+  const deg = parseFloat($('northDeg').value) || 0;
+  cad.drawn = parcel.enu.map(p => { const q = enuToCad(p, deg); return [q[0] + cad.pOff[0], q[1] + cad.pOff[1]]; });
+  cad.site = null; cad.pts = []; cad.pOn = true;
+  const xs = cad.drawn.map(p => p[0]), ys = cad.drawn.map(p => p[1]), b = cad.bb0 || [Infinity, Infinity, -Infinity, -Infinity];
+  cad.bb = [Math.min(b[0], ...xs), Math.min(b[1], ...ys), Math.max(b[2], ...xs), Math.max(b[3], ...ys)];
+}
+function cadRebuild(refit) {
+  Object.assign(cad, buildShapes(cad.raw.ents, UNIT[$('dxfUnit').value]), { bld: new Set(), site: null, drawn: null, bldDrawn: [], pts: [], cal: [], ok: false, pOn: false, pOff: null });
+  cad.bb0 = cad.bb.slice();   // 도면만의 범위 (필지를 더해 보기 범위를 넓힐 때 기준)
+  if (parcel) applyParcel(true);
+  show($('cadPick'), false);
+  const [x0, y0, x1, y1] = cad.bb;
+  $('cadInfo').innerHTML = `도면 크기 <b>가로 ${f(x1 - x0, 1)}m × 세로 ${f(y1 - y0, 1)}m</b> (단위 ${$('dxfUnit').value}로 읽음) — 실제 크기와 맞나요? 안 맞으면 위에서 단위를 바꿔 보세요.<br>` +
+    `선택할 수 있는 닫힌 도형 ${cad.shapes.length}개${cad.dup ? ` (똑같은 모양 ${cad.dup}개는 하나로 합침)` : ''}` +
+    (cad.zr ? ` · 파일의 높이(Z) 범위 ${f(cad.zr[0])} ~ ${f(cad.zr[1])}m (참고용, 층수·층고는 직접 입력)` : '') +
+    (cad.un ? `<br><span class="bad">읽지 못한 도형: ${esc(cad.un)}</span> — 이 도형들은 그려지지 않았어요.` : '');
+  if (!cad.shapes.length) $('cadInfo').innerHTML += '<br><span class="bad">닫힌 도형이 없어요. 건물·대지 윤곽이 닫힌 곡선인지 확인해 주세요.</span>';
+  if (parcel) autoFit();
+  const go = () => { cadFit(); renderCad(); updateCad(); };
+  if (refit) requestAnimationFrame(go); else go();
+}
+// 지도 이미지 불러오기: 이미지는 픽셀 좌표(위쪽이 +y)로 두고, 축척(s, 미터/픽셀)은 나중에 맞춤
+function loadMap(file) {
+  const url = URL.createObjectURL(file), img = new Image();
+  img.onerror = () => msg($('cadMsg'), ['이미지를 열지 못했어요. PNG나 JPG 캡처로 다시 올려 주세요.']);
+  img.onload = () => {
+    msg($('cadMsg'), []);
+    const W = img.naturalWidth, H = img.naturalHeight;
+    cad = cadBase({ tool: 'scale', s: null, bb: [0, 0, W, H], map: { W, H } });
+    $('cadBg').innerHTML = `<image href="${url}" x="0" y="${-H}" width="${W}" height="${H}"/>`;
+    $('cadInfo').innerHTML = `지도 이미지 ${W}×${H}px를 불러왔어요. 지도가 맞으면 아래 "맞아요"를 누르고, 먼저 <b>축척 맞추기</b>부터 하세요.`;
+    show($('cadWork')); show($('cadPick'), false); show($('btnCadOk'));
+    requestAnimationFrame(() => { cadFit(); renderCad(); updateCad(); });
+  };
+  img.src = url;
+}
+function cadFit() {
+  $('sec-cad').classList.remove('idle'); $('sec-cad').open = true;
+  const r = $('cadSvg').getBoundingClientRect(), [x0, y0, x1, y1] = cad.bb, w = Math.max(x1 - x0, 1e-6), h = Math.max(y1 - y0, 1e-6), asp = (r.height || 400) / (r.width || 600);
+  let vw = w * 1.16, vh = vw * asp; if (vh < h * 1.16) { vh = h * 1.16; vw = vh / asp; }
+  cad.view = { x: (x0 + x1) / 2 - vw / 2, y: -((y0 + y1) / 2) - vh / 2, w: vw, h: vh };
+}
+const cadSetView = () => { const v = cad.view; $('cadSvg').setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`); };
+function renderCad() {
+  const P = p => p[0].toFixed(3) + ',' + (-p[1]).toFixed(3), v = cad.view, k = v.w / ($('cadSvg').getBoundingClientRect().width || 600);
+  const poly = (pts, fill, stroke) => `<polygon points="${pts.map(P).join(' ')}" fill="${fill}" fill-opacity=".3" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke"/>`;
+  const dots = (pts, col) => pts.map(p => `<circle cx="${p[0]}" cy="${-p[1]}" r="${5 * k}" fill="${col}"/>`).join('');
+  let g = cad.open.length ? `<path d="${cad.open.map(s => 'M' + s.pts.map(P).join('L')).join('')}" fill="none" stroke="#777" stroke-width="1" vector-effect="non-scaling-stroke"/>` : '';
+  cad.shapes.forEach((s, i) => {
+    const inB = cad.bld.has(i), isS = cad.site === i;
+    g += `<polygon data-i="${i}" points="${s.pts.map(P).join(' ')}" fill="${inB ? '#1F4FA8' : isS ? '#2F6B4F' : '#000'}" fill-opacity="${inB ? .45 : isS ? .3 : .02}" stroke="${inB ? '#173E85' : isS ? '#244F3B' : '#333'}" stroke-width="${inB || isS ? 3 : 1.2}" vector-effect="non-scaling-stroke"/>`;
+  });
+  if (cad.drawn) g += poly(cad.drawn, '#2F6B4F', '#244F3B');
+  cad.bldDrawn.forEach(b => { g += poly(b, '#1F4FA8', '#173E85'); });
+  const col = cad.tool === 'bdraw' ? '#173E85' : '#244F3B';
+  if (cad.pts.length) g += `<polyline points="${cad.pts.map(P).join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>` + dots(cad.pts, col);
+  if (cad.cal.length) g += (cad.cal.length === 2 ? `<polyline points="${cad.cal.map(P).join(' ')}" fill="none" stroke="#e5483d" stroke-width="3" vector-effect="non-scaling-stroke"/>` : '') + dots(cad.cal, '#e5483d');
+  $('cadFg').innerHTML = g; cadSetView();
+}
+function cadWorld(ev) { const r = $('cadSvg').getBoundingClientRect(), v = cad.view; return [v.x + (ev.clientX - r.left) / r.width * v.w, -(v.y + (ev.clientY - r.top) / r.height * v.h)]; }
+function cadSnap(p) {   // 가까운 꼭짓점(도면·이미 그린 도형)에 붙이기 (화면 12px 이내)
+  const tol = 12 * cad.view.w / $('cadSvg').getBoundingClientRect().width; let best = null, bd = tol;
+  for (const s of [...cad.shapes, ...cad.open, ...(cad.drawn ? [{ pts: cad.drawn }] : []), ...cad.bldDrawn.map(pts => ({ pts }))]) for (const q of s.pts) { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); if (d < bd) { bd = d; best = q; } }
+  return best || p;
+}
+function cadZoom(fct) { const v = cad.view, cx = v.x + v.w / 2, cy = v.y + v.h / 2; v.w *= fct; v.h *= fct; v.x = cx - v.w / 2; v.y = cy - v.h / 2; renderCad(); }
+function cadClick(ev) {
+  if (cadDragged) { cadDragged = false; return; }
+  if (!cad || !cad.ok) return;
+  if (cad.tool === 'scale') { if (cad.cal.length >= 2) cad.cal = []; cad.cal.push(cadWorld(ev)); }
+  else if (cad.tool === 'draw' || cad.tool === 'bdraw') { if (cad.tool === 'draw' && cad.drawn) return; cad.pts.push(cadSnap(cadWorld(ev))); }
+  else {
+    const el = ev.target.closest && ev.target.closest('polygon[data-i]'); if (!el) return;
+    const i = +el.dataset.i;
+    if (cad.tool === 'bld') { cad.bld.has(i) ? cad.bld.delete(i) : cad.bld.add(i); if (cad.site === i) cad.site = null; }
+    else { cad.site = i; cad.drawn = null; cad.pOn = false; cad.pts = []; cad.bld.delete(i); }
+  }
+  renderCad(); updateCad();
+}
+function cadResult() {
+  const c = cad, r = { warn: [], siteArea: null, bldArea: null, setback: null };
+  if (c.s === null) { r.warn.push('먼저 "축척 맞추기"로 지도의 크기를 맞춰 주세요.'); return r; }
+  const S = pts => pts.map(p => [p[0] * c.s, p[1] * c.s]);
+  const site = c.drawn ? S(c.drawn) : c.site !== null ? S(c.shapes[c.site].pts) : null, bl = [...[...c.bld].map(i => c.shapes[i].pts), ...c.bldDrawn].map(S);
+  r.site = site; r.bl = bl;
+  r.siteArea = site ? polyArea(site) : null; r.bldArea = bl.length ? bl.reduce((a, p) => a + polyArea(p), 0) : null;
+  const deg = parseFloat($('northDeg').value) || 0;
+  if (site && bl.length) {
+    r.setback = northSetback(site, bl, deg);
+    if (r.setback === null) r.warn.push('정북 쪽에 대지 경계가 없어 정북 이격을 계산하지 못했어요. 북쪽 방향 각도나 대지 윤곽을 확인해 주세요.');
+    const out = outsideCount(site, bl); if (out) r.warn.push(`건물 꼭짓점 ${out}개가 대지 밖에 있어요. 대지나 건물을 다시 골랐는지 확인해 주세요.`);
+  }
+  return r;
+}
+function updateCad() {
+  $('northArrow').style.transform = `rotate(${parseFloat($('northDeg').value) || 0}deg)`;
+  if (!cad.ok) return;
+  if (cad.tool === 'move' && !cad.pOn) cad.tool = 'bdraw';
+  const dxf = cad.shapes.length > 0, map = !!cad.map, T = cad.tool;
+  document.querySelectorAll('[data-tool]').forEach(b => { const t = b.dataset.tool; b.classList.toggle('hide', ((t === 'bld' || t === 'sel') && !dxf) || (t === 'scale' && !map) || (t === 'move' && !cad.pOn)); b.classList.toggle('on', t === T); });
+  show($('parcelBtns'), !!cad.pOn);
+  $('toolHint').textContent = TOOL_HINT[T]; show($('drawBtns'), T === 'draw' || T === 'bdraw'); show($('scaleBox'), T === 'scale');
+  $('scaleInfo').textContent = cad.s ? `현재 축척: 1픽셀 = ${f(cad.s, 4)}m` : cad.cal.length ? `점 ${cad.cal.length}개 찍음` : '아직 맞추지 않았어요.';
+  const r = cadResult(), row = (a, b) => `<p style="margin:.2em 0"><b>${a}</b> ${b}</p>`, nb = cad.bld.size + cad.bldDrawn.length;
+  $('cadRes').innerHTML = row('건물', nb ? `${nb}개 · 건축면적 ${f(r.bldArea)}㎡` : '아직 정하지 않았어요. <span class="hint">위 버튼 <b>건물 직접 그리기</b>로 윤곽을 그리거나, .3dm·DXF를 올려 <b>건물 윤곽 고르기</b>를 쓰면 건축면적과 정북 이격이 계산돼요.</span>') +
+    row('대지', r.site ? `면적 ${f(r.siteArea)}㎡ (${cad.pOn ? '지도(VWorld) 필지' + (parcel && parcel.addr ? ' · ' + esc(parcel.addr) : '') : cad.drawn ? '직접 그린 윤곽' : '도면의 닫힌 선'})` : cad.pts.length ? `점 ${cad.pts.length}개 찍음 (3개 이상이면 "완성")` : '아직 지정하지 않았어요.') +
+    row('정북 이격', r.setback != null ? `${f(r.setback)}m (북쪽 ${f(parseFloat($('northDeg').value) || 0, 1)}°)` : '-') + r.warn.map(w => `<p class="bad" style="margin:.2em 0">${esc(w)}</p>`).join('') +
+    '<p class="hint">정북 이격 = 건물 각 부분에서 정북 쪽으로 쏜 선이 대지 경계와 만나는 거리 중 가장 짧은 값.</p>' +
+    (map ? '<p class="hint">지도 이미지에서 찍은 값은 이미지 해상도와 축척을 맞춘 정확도만큼 오차가 있어요. 정확한 면적은 지적도·토지대장으로 확인하세요.</p>' : '');
+  $('btnFill').disabled = !(r.siteArea && r.bldArea);
+  $('fillHint').textContent = $('btnFill').disabled ? '대지와 건물이 모두 정해지면 눌러져요.' : '눌러서 대지면적·건축면적·정북 이격을 왼쪽 계획 입력칸에 채워요.';
+}
+function cadFill() {
+  const r = cadResult(), set = (id, v) => $(id).value = Math.round(v * 100) / 100;
+  set('site', r.siteArea); set('footprint', r.bldArea); if (r.setback != null) set('setback', r.setback);
+  const n = $('drawNote'); n.textContent = `${cad.map ? '지도' : '도면'}에서 가져온 값: 대지면적 ${f(r.siteArea)}㎡, 건축면적 ${f(r.bldArea)}㎡` + (r.setback != null ? `, 정북 이격 ${f(r.setback)}m` : ', 정북 이격은 계산하지 못해 직접 입력해야 해요') + '. 고쳐도 돼요. 층수·층고·층별 바닥면적은 직접 입력하세요.';
+  if (cad.pOn) n.textContent += ` 대지는 지도(VWorld) 필지이고 면적은 참고용이에요(토지대장 확인). 건폐율·용적률 칸은 비어 있으면 대구 도시계획 조례 값을 확인해 직접 입력하세요.`;
+  show(n); $('sec-input').scrollIntoView({ behavior: 'smooth' });
+}
+function wireCad() {
+  $('dxfFile').onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    if (file.size > 40e6) return msg($('cadMsg'), ['파일이 너무 커요 (40MB 이하). 건물·대지 곡선만 골라 내보내 주세요.']);
+    const fr = new FileReader(); fr.onload = () => loadDxf(String(fr.result)); fr.onerror = () => msg($('cadMsg'), ['파일을 읽지 못했어요.']); fr.readAsText(file);
+  };
+  $('mapFile').onchange = e => { const file = e.target.files[0]; if (file) loadMap(file); };
+  $('dxfUnit').onchange = () => cad && cad.raw && cadRebuild(false);
+  $('northDeg').oninput = () => { if (!cad) return; if (cad.pOn) { applyParcel(false); renderCad(); } updateCad(); };
+  $('btnCadOk').onclick = () => { cad.ok = true; show($('cadPick')); updateCad(); $('cadPick').scrollIntoView({ behavior: 'smooth' }); };
+  $('zIn').onclick = () => cad && cadZoom(0.7); $('zOut').onclick = () => cad && cadZoom(1.4); $('zFit').onclick = () => { if (cad) { cadFit(); renderCad(); } };
+  document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { if (cad.tool !== b.dataset.tool) cad.pts = []; cad.tool = b.dataset.tool; renderCad(); updateCad(); });
+  $('btnScale').onclick = () => {
+    const d = parseFloat($('mapDist').value);
+    if (cad.cal.length < 2 || Math.hypot(cad.cal[1][0] - cad.cal[0][0], cad.cal[1][1] - cad.cal[0][1]) < 1) return msg($('cadMsg'), ['지도에서 서로 떨어진 두 점을 먼저 눌러 주세요.']);
+    if (!(d > 0)) return msg($('cadMsg'), ['두 점 사이의 실제 거리(m)를 0보다 큰 숫자로 적어 주세요.']);
+    msg($('cadMsg'), []); cad.s = d / Math.hypot(cad.cal[1][0] - cad.cal[0][0], cad.cal[1][1] - cad.cal[0][1]); updateCad();
+  };
+  $('btnClose').onclick = () => {
+    if (cad.pts.length < 3) return msg($('cadMsg'), ['점 3개 이상을 찍어야 완성할 수 있어요.']);
+    msg($('cadMsg'), []);
+    if (cad.tool === 'bdraw') cad.bldDrawn.push(cad.pts); else { cad.drawn = cad.pts; cad.site = null; cad.pOn = false; }
+    cad.pts = []; renderCad(); updateCad();
+  };
+  $('btnUndo').onclick = () => {
+    if (cad.tool === 'bdraw') { if (!cad.pts.length && cad.bldDrawn.length) cad.pts = cad.bldDrawn.pop(); }
+    else if (cad.drawn) { cad.pts = cad.drawn; cad.drawn = null; cad.pOn = false; }
+    cad.pts.pop(); renderCad(); updateCad();
+  };
+  $('btnClear').onclick = () => { cad.pts = []; if (cad.tool === 'bdraw') cad.bldDrawn = []; else { cad.drawn = null; cad.site = null; cad.pOn = false; } renderCad(); updateCad(); };
+  $('btnParcelToBld').onclick = () => { applyParcel(true); cadFit(); renderCad(); updateCad(); };
+  $('btnFill').onclick = cadFill;
+  const sv = $('cadSvg');
+  sv.addEventListener('pointerdown', e => { if (cad) { cadDown = { x: e.clientX, y: e.clientY, vx: cad.view.x, vy: cad.view.y, px: e.clientX, py: e.clientY }; cadDragged = false; } });
+  sv.addEventListener('pointermove', e => {
+    if (!cad || !cadDown) return; const dx = e.clientX - cadDown.x, dy = e.clientY - cadDown.y;
+    if (!cadDragged && Math.hypot(dx, dy) < 6) return; cadDragged = true;
+    const r = sv.getBoundingClientRect();
+    if (cad.tool === 'move' && cad.pOn) {   // 지도 필지 끌어 옮기기 (건물은 그대로)
+      const k = cad.view.w / r.width; cad.pOff[0] += (e.clientX - cadDown.px) * k; cad.pOff[1] -= (e.clientY - cadDown.py) * k;
+      cadDown.px = e.clientX; cadDown.py = e.clientY; applyParcel(false); renderCad(); updateCad(); return;
+    }
+    cad.view.x = cadDown.vx - dx * cad.view.w / r.width; cad.view.y = cadDown.vy - dy * cad.view.h / r.height; cadSetView();
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => sv.addEventListener(t, () => { cadDown = null; }));
+  sv.addEventListener('click', cadClick);
+  sv.addEventListener('wheel', e => { if (cad) { e.preventDefault(); cadZoom(e.deltaY > 0 ? 1.2 : 1 / 1.2); } }, { passive: false });
+}
+
+/* ---- Rhino .3dm 읽기 (rhino3dm WASM, 처음 한 번 CDN에서 내려받음) ---- */
+// ponytail: 곡선만 읽음. 솔리드·서피스·메쉬·블록은 개수만 알려 주고, 윤곽 곡선을 따로 두게 함.
+const RH_URL = 'https://cdn.jsdelivr.net/npm/rhino3dm@8.4.0/rhino3dm.min.js';
+const loadScript = u => new Promise((ok, no) => { const s = document.createElement('script'); s.src = u; s.onload = ok; s.onerror = () => no(new Error(u)); document.head.appendChild(s); });
+let rhP = null;
+function rhCurvePts(g) {
+  const A = p => Array.from(p).slice(0, 3), same = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) < 1e-9;
+  let pts;
+  if (typeof g.pointCount === 'number' && typeof g.point === 'function') pts = Array.from({ length: g.pointCount }, (_, i) => A(g.point(i)));   // PolylineCurve
+  else if (typeof g.segmentCount === 'number' && typeof g.segmentCurve === 'function') {                                                      // PolyCurve: 조각마다 모아 이음
+    pts = []; for (let i = 0; i < g.segmentCount; i++) { const s = rhCurvePts(g.segmentCurve(i)); if (pts.length && same(pts[pts.length - 1], s[0])) s.shift(); pts.push(...s); }
+  } else {
+    const [t0, t1] = g.domain, at = t => A(g.pointAt(t)), a = at(t0), b = at(t1), deg = typeof g.degree === 'function' ? g.degree() : g.degree;
+    const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], L = Math.hypot(...ab);
+    const straight = L > 1e-9 && [0.25, 0.5, 0.75].every(f => { const p = at(t0 + (t1 - t0) * f), v = [p[0] - a[0], p[1] - a[1], p[2] - a[2]];
+      return Math.hypot(v[1] * ab[2] - v[2] * ab[1], v[2] * ab[0] - v[0] * ab[2], v[0] * ab[1] - v[1] * ab[0]) / L < 1e-6; });
+    if (straight) return [a, b];
+    if (deg === 1 && typeof g.points === 'function') { const P = g.points(); pts = Array.from({ length: P.count }, (_, i) => A(P.get(i))); }
+    else pts = Array.from({ length: 257 }, (_, i) => at(t0 + (t1 - t0) * i / 256));
+  }
+  if (g.isClosed && pts.length > 3 && same(pts[0], pts[pts.length - 1])) pts.pop();
+  return pts;
+}
+/* ---- 솔리드(Brep·Extrusion·Mesh) → 바닥 투영 윤곽 ---- */
+// ponytail: 작은 객체는 바운딩 박스, 큰 객체(가로·세로 3m↑)는 렌더 메쉬 삼각형을 바닥에 투영해 칠한 뒤 가장자리를 따서 윤곽을 만듦.
+//   격자(0.25m 이상)라 그만큼의 오차가 있고, 구멍(중정)은 버림. 메쉬가 파일에 없는 큰 솔리드는 바운딩 박스로 대신함.
+const SOLID = new Set(['Brep', 'Extrusion', 'Mesh']);
+const EXCLUDE_LAYER = /context|지반|주변|지형|맥락|site|ground|terrain|topo|tree|trunk|수목|조경|furn|가구|entourage|people/i;
+let rhState = null;
+function rhSolidItem(rh, g, tname, li, sc) {
+  let bb; try { bb = g.getBoundingBox(); } catch (e) { return null; }
+  const mn = bb && bb.min, mx = bb && bb.max;
+  if (!mn || !mx || !isFinite(mn[0] + mx[0] + mn[1] + mx[1])) return null;
+  const it = { li, x0: mn[0], y0: mn[1], x1: mx[0], y1: mx[1], tris: null };
+  if ((mx[0] - mn[0]) * sc > 3 && (mx[1] - mn[1]) * sc > 3) {
+    try {
+      const meshes = [];
+      if (tname === 'Mesh') meshes.push([g, false]);
+      else if (tname === 'Extrusion') { const m = g.getMesh(rh.MeshType.Any); if (m) meshes.push([m, true]); }
+      else { const fs = g.faces(); for (let k = 0; k < fs.count; k++) { const fc = fs.get(k), m = fc.getMesh(rh.MeshType.Any); if (m) meshes.push([m, true]); try { fc.delete(); } catch (e) {} } }
+      const t = [];
+      for (const [m, own] of meshes) {
+        const V = m.vertices(), F = m.faces(), nv = V.count, vx = new Float64Array(nv), vy = new Float64Array(nv);
+        for (let i = 0; i < nv; i++) { const p = V.get(i); vx[i] = p[0]; vy[i] = p[1]; }
+        for (let i = 0; i < F.count; i++) {
+          const q = F.get(i); t.push(vx[q[0]], vy[q[0]], vx[q[1]], vy[q[1]], vx[q[2]], vy[q[2]]);
+          if (q[3] !== q[2]) t.push(vx[q[0]], vy[q[0]], vx[q[2]], vy[q[2]], vx[q[3]], vy[q[3]]);
+        }
+        if (own) { try { m.delete(); } catch (e) {} }
+      }
+      if (t.length) it.tris = new Float32Array(t);
+    } catch (e) {}
+  }
+  return it;
+}
+function dpSimplify(pts, eps) {      // Douglas–Peucker (열린 점열)
+  if (pts.length < 3) return pts.slice();
+  const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1; const st = [[0, pts.length - 1]];
+  while (st.length) {
+    const [a, b] = st.pop(); let md = -1, mi = -1;
+    for (let i = a + 1; i < b; i++) { const d = segDist(pts[i], pts[a], pts[b]); if (d > md) { md = d; mi = i; } }
+    if (md > eps) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+function outlinesFromItems(items, sc, sel) {          // → [{pts:[[x,y]] (파일 단위), area(㎡)}] 큰 것부터
+  const use = items.filter(it => sel.has(it.li));
+  if (!use.length) return [];
+  let X0 = 1e300, Y0 = 1e300, X1 = -1e300, Y1 = -1e300;
+  for (const it of use) { X0 = Math.min(X0, it.x0 * sc); Y0 = Math.min(Y0, it.y0 * sc); X1 = Math.max(X1, it.x1 * sc); Y1 = Math.max(Y1, it.y1 * sc); }
+  const span = Math.max(X1 - X0, Y1 - Y0); if (!(span > 0.5)) return [];
+  const cell = Math.max(0.25, span / 700), PD = 4, nx = Math.ceil((X1 - X0) / cell) + 2 * PD + 1, ny = Math.ceil((Y1 - Y0) / cell) + 2 * PD + 1;
+  const g = new Uint8Array(nx * ny), gx = x => (x * sc - X0) / cell + PD, gy = y => (y * sc - Y0) / cell + PD;
+  const cl = (v, m) => Math.max(0, Math.min(m - 1, v));
+  const rect = (x0, y0, x1, y1) => { for (let j = cl(Math.floor(gy(y0)), ny); j <= cl(Math.floor(gy(y1)), ny); j++) for (let i = cl(Math.floor(gx(x0)), nx); i <= cl(Math.floor(gx(x1)), nx); i++) g[j * nx + i] = 1; };
+  const tri = (ax, ay, bx, by, cx, cy) => {
+    const d = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax); if (Math.abs(d) < 1e-9) return;
+    const i0 = cl(Math.floor(Math.min(ax, bx, cx)), nx), i1 = cl(Math.floor(Math.max(ax, bx, cx)), nx), j0 = cl(Math.floor(Math.min(ay, by, cy)), ny), j1 = cl(Math.floor(Math.max(ay, by, cy)), ny);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const px = i + .5, py = j + .5, w0 = ((bx - px) * (cy - py) - (by - py) * (cx - px)) / d, w1 = ((cx - px) * (ay - py) - (cy - py) * (ax - px)) / d;
+      if (w0 >= -.03 && w1 >= -.03 && 1 - w0 - w1 >= -.03) g[j * nx + i] = 1;
+    }
+  };
+  for (const it of use) {
+    if (!it.tris) { rect(it.x0, it.y0, it.x1, it.y1); continue; }
+    const T = it.tris; for (let k = 0; k < T.length; k += 6) tri(gx(T[k]), gy(T[k + 1]), gx(T[k + 2]), gy(T[k + 3]), gx(T[k + 4]), gy(T[k + 5]));
+  }
+  // 작은 틈 메우기(닫기): 0.4m 정도 팽창 후 수축
+  const R = Math.max(1, Math.round(0.4 / cell));
+  const pass = (src, dil, horiz) => {
+    const out = new Uint8Array(nx * ny);
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      let v = dil ? 0 : 1;
+      for (let k = -R; k <= R; k++) { const a = horiz ? i + k : i, b = horiz ? j : j + k, s = (a >= 0 && a < nx && b >= 0 && b < ny) ? src[b * nx + a] : 0; if (dil ? s : !s) { v = dil ? 1 : 0; break; } }
+      out[j * nx + i] = v;
+    }
+    return out;
+  };
+  const h = pass(pass(pass(pass(g, true, true), true, false), false, true), false, false);
+  // 가장자리 따기: 칠한 칸의 바깥 변을 시계 반대 방향으로 이어 붙임
+  const edges = new Map(), key = (x, y) => y * (nx + 1) + x, add = (x0, y0, x1, y1) => { const k = key(x0, y0); if (!edges.has(k)) edges.set(k, []); edges.get(k).push([x1, y1]); };
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    if (!h[j * nx + i]) continue;
+    if (j === 0 || !h[(j - 1) * nx + i]) add(i, j, i + 1, j);
+    if (i === nx - 1 || !h[j * nx + i + 1]) add(i + 1, j, i + 1, j + 1);
+    if (j === ny - 1 || !h[(j + 1) * nx + i]) add(i + 1, j + 1, i, j + 1);
+    if (i === 0 || !h[j * nx + i - 1]) add(i, j + 1, i, j);
+  }
+  const loops = [];
+  for (const [k0, outs] of edges) {
+    while (outs.length) {
+      const sx = k0 % (nx + 1), sy = Math.floor(k0 / (nx + 1)), loop = [[sx, sy]]; let [px, py] = outs.pop(), guard = 0;
+      for (;;) {
+        if (px === sx && py === sy) break;
+        loop.push([px, py]); const o = edges.get(key(px, py)); if (!o || !o.length || ++guard > 4e6) { loop.length = 0; break; }
+        [px, py] = o.pop();
+      }
+      if (loop.length >= 4) loops.push(loop);
+    }
+  }
+  const res = [];
+  for (const lp of loops) {
+    let a = 0; for (let i = 0; i < lp.length; i++) { const p = lp[i], q = lp[(i + 1) % lp.length]; a += p[0] * q[1] - q[0] * p[1]; }
+    const area = a / 2 * cell * cell; if (area < 4) continue;            // 시계 방향(구멍)·4㎡ 미만 버림
+    let sp = dpSimplify(lp.concat([lp[0]]), Math.max(2, 0.5 / cell));   // 허용 오차: 칸 단위(약 0.5m) sp.pop(); if (sp.length < 3) continue;
+    res.push({ area, pts: sp.map(p => [(X0 + (p[0] - PD) * cell) / sc, (Y0 + (p[1] - PD) * cell) / sc, 0]) });
+  }
+  return res.sort((a, b) => b.area - a.area).slice(0, 15);
+}
+function solidEnts() {                  // 선택한 레이어의 솔리드 → 윤곽 도형 목록
+  const sel = new Set([...document.querySelectorAll('#layerList input:checked')].map(i => +i.value));
+  return outlinesFromItems(rhState.items, rhState.sc, sel).map(o => ({ layer: '자동 윤곽', pts: o.pts, closed: true }));
+}
+function renderLayers() {
+  const L = rhState.layers; if (!L.length) return show($('layerBox'), false);
+  $('layerList').innerHTML = L.map(l => `<label class="lay"><input type="checkbox" value="${l.li}" ${EXCLUDE_LAYER.test(l.path) ? '' : 'checked'}><span>${esc(l.path.split('::').slice(-2).join(' › '))}</span><small>${l.n}</small></label>`).join('');
+  show($('layerBox'));
+}
+// ---- 올린 도면의 건물을 지도 대지에 짐작해서 맞춤 ----
+// 건물 윤곽(닫힌 도형 중 대지보다 너무 크지 않은 가장 큰 것)을 고르고, 대지 안에 가장 많이 들어가는 방향·위치를 찾음.
+// ponytail: 후보 방향은 "대지 변 ↔ 건물 변"을 나란히 맞추는 각도들, 위치는 격자 탐색. 건물이 대지보다 크면 맞춤 점수가 낮게 나오고 안내만 함.
+function autoFit() {
+  if (!cad || !parcel || cad.map || !cad.shapes.length) return;
+  const info = $('cadInfo'); info.querySelectorAll('.fitNote').forEach(e => e.remove());
+  const say = h => { info.insertAdjacentHTML('beforeend', `<span class="fitNote"><br>${h}</span>`); };
+  const pa = polyArea(parcel.enu), mean = pts => [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
+  const cs = cad.shapes.map((sh, i) => ({ i, a: sh.area, pts: sh.pts })).filter(x => x.a >= 6).sort((a, b) => b.a - a.a);
+  const first = cs.find(x => x.a <= pa * 1.8);
+  if (!first) return say(`<span class="bad">자동 맞춤 실패:</span> 도면의 닫힌 도형이 모두 대지(${f(pa)}㎡)보다 훨씬 커요. 도면 단위와 지도에서 고른 필지를 확인해 주세요.`);
+  const pick = [first, ...cs.filter(x => x !== first && x.a >= first.a * .4 && x.a <= pa * 1.8 && !inPoly(mean(x.pts), first.pts))];
+  cad.bld = new Set(pick.map(x => x.i)); cad.bldDrawn = [];
+  const bpts = pick.flatMap(x => x.pts), bc = mean(bpts), xs = bpts.map(p => p[0]), ys = bpts.map(p => p[1]), bs = [];
+  const bst = Math.max(0.5, Math.sqrt((Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys)) / 120));
+  for (let x = Math.min(...xs); x <= Math.max(...xs); x += bst) for (let y = Math.min(...ys); y <= Math.max(...ys); y += bst) if (pick.some(c => inPoly([x, y], c.pts))) bs.push([x, y]);
+  if (!bs.length) bs.push(bc);
+  const dirs = (pts, n) => pts.map((p, i) => { const q = pts[(i + 1) % pts.length]; return { l: Math.hypot(q[0] - p[0], q[1] - p[1]), a: Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI }; }).filter(e => e.l >= 2).sort((a, b) => b.l - a.l).slice(0, n).map(e => e.a);
+  const cand = new Set([0]);
+  for (const a of dirs(parcel.enu, 6)) for (const b of dirs(first.pts, 5)) for (let k = 0; k < 4; k++) cand.add(Math.round((((a - b - 90 * k) % 360) + 360) % 360 * 2) / 2 % 360);
+  let best = null;
+  for (const deg of cand) {
+    const Q = parcel.enu.map(p => enuToCad(p, deg)), qx = Q.map(p => p[0]), qy = Q.map(p => p[1]), qc = mean(Q);
+    const q0x = Math.min(...qx), q1x = Math.max(...qx), q0y = Math.min(...qy), q1y = Math.max(...qy), st = Math.max(0.4, Math.max(q1x - q0x, q1y - q0y) / 22);
+    for (let x = q0x; x <= q1x; x += st) for (let y = q0y; y <= q1y; y += st) {
+      if (!inPoly([x, y], Q)) continue;
+      let n = 0; for (const b of bs) if (inPoly([b[0] - bc[0] + x, b[1] - bc[1] + y], Q)) n++;
+      const sc = n / bs.length, d = Math.hypot(x - qc[0], y - qc[1]);
+      if (!best || sc > best.sc + 1e-9 || (Math.abs(sc - best.sc) <= 1e-9 && d < best.d)) best = { sc, d, deg, off: [bc[0] - x, bc[1] - y] };
+    }
+  }
+  if (!best) return say('자동 맞춤에 실패했어요. "대지 옮기기"로 직접 맞춰 주세요.');
+  $('northDeg').value = Math.round(best.deg * 10) / 10; cad.pOff = best.off; applyParcel(false);
+  cad.ok = true; show($('cadPick')); show($('btnCadOk'), false);
+  const pct = Math.round(best.sc * 100), ba = pick.reduce((a, x) => a + x.a, 0);
+  say(`<b>자동 맞춤:</b> 건물 윤곽 ${pick.length}개(${f(ba)}㎡)를 대지(${f(pa)}㎡)에 맞췄어요 — 건물의 <b>${pct}%</b>가 대지 안에 들어가요 (북쪽 ${f(best.deg, 1)}°). ` +
+    (best.sc < .9 ? '<span class="bad">일부가 대지 밖이에요. 건물이 대지보다 크거나 필지를 더 골라야 할 수 있어요.</span>' : '짐작한 위치예요. 틀리면 "대지 옮기기"나 "북쪽 방향(도)"로 고치세요.'));
+}
+
+async function loadRh(file) {
+  if (file.size > 150e6) return msg($('cadMsg'), ['파일이 너무 커요 (150MB 이하). 건물 레이어만 따로 저장해 주세요.']);
+  msg($('cadMsg'), ['Rhino 파일을 읽는 중이에요… (큰 파일은 수십 초 걸릴 수 있어요)']);
+  let rh, doc;
+  try { rhP = rhP || loadScript(RH_URL).then(() => rhino3dm()); rh = await rhP; }
+  catch (e) { rhP = null; return msg($('cadMsg'), ['rhino3dm 라이브러리를 내려받지 못했어요. 인터넷 연결을 확인하거나, 곡선만 DXF로 내보내 올려 주세요.']); }
+  try { doc = rh.File3dm.fromByteArray(new Uint8Array(await file.arrayBuffer())); if (!doc) throw 0; }
+  catch (e) { return msg($('cadMsg'), ['.3dm 파일을 열지 못했어요. 파일이 깨지지 않았는지, 너무 새로운 Rhino 버전 파일은 아닌지 확인해 주세요.']); }
+  await new Promise(r => setTimeout(r, 30));      // 읽는 중 문구가 먼저 그려지도록
+  const names = {}; Object.keys(rh.ObjectType).forEach(k => { const v = rh.ObjectType[k]; if (v && v.value !== undefined) names[v.value] = k; });
+  let u = null; try { const us = doc.settings().modelUnitSystem; u = { 2: 'mm', 3: 'cm', 4: 'm' }[us.value !== undefined ? us.value : us] || null; } catch (e) {}
+  const sc = UNIT[u || $('dxfUnit').value] || 1, layerPath = [];
+  try {
+    const Ls = doc.layers(), arr = []; for (let i = 0; i < Ls.count; i++) { const l = Ls.get(i); arr.push({ id: l.id, name: l.name, parent: l.parentLayerId }); }
+    const byId = new Map(arr.map(x => [x.id, x]));
+    arr.forEach((x, i) => { let p = x.name, q = byId.get(x.parent), n = 0; while (q && n++ < 20) { p = q.name + '::' + p; q = byId.get(q.parent); } layerPath[i] = p; });
+  } catch (e) {}
+  const objs = doc.objects(), ents = [], unsupported = {}, items = [], lcount = new Map(), bad = k => unsupported[k] = (unsupported[k] || 0) + 1;
+  for (let i = 0; i < objs.count; i++) {
+    const o = objs.get(i), g = o.geometry(); if (!g) continue;
+    const tv = g.objectType.value !== undefined ? g.objectType.value : g.objectType, tn = names[tv] || '기타';
+    if (tv === rh.ObjectType.Curve.value) { try { const pts = rhCurvePts(g), cl = !!g.isClosed; if (pts.length >= 2) ents.push({ layer: '', pts, closed: cl && pts.length >= 3 }); } catch (e) { bad('곡선(읽기 실패)'); } }
+    else if (SOLID.has(tn)) {
+      let li = -1; try { li = o.attributes().layerIndex; } catch (e) {}
+      const it = rhSolidItem(rh, g, tn, li, sc); if (it) { items.push(it); lcount.set(li, (lcount.get(li) || 0) + 1); } else bad(tn);
+    } else bad(tn);
+  }
+  try { doc.delete(); } catch (e) {}
+  rhState = { items, sc, curves: ents, unsupported, u, layers: [...lcount].map(([li, n]) => ({ li, n, path: layerPath[li] || ('레이어 ' + li) })).sort((a, b) => b.n - a.n) };
+  renderLayers();
+  const out = items.length ? solidEnts() : [];
+  loadParsed({ ents: ents.concat(out), unsupported, insunits: 0 }, u);
+  if (items.length && cad && cad.raw) $('cadInfo').insertAdjacentHTML('beforeend', `<br>솔리드 ${items.length}개를 바닥에 투영해 건물 윤곽 ${out.length}개를 만들었어요. 건물이 아닌 레이어(주변 건물·지반 등)는 <b>파일 올리기 탭의 레이어 목록</b>에서 끄고 다시 만들 수 있어요.`);
+  if ((ents.length || out.length) && !u) msg($('cadMsg'), ['Rhino 파일의 단위를 mm·cm·m로 인식하지 못했어요. "도면 단위"가 실제 크기와 맞는지 확인해 주세요.']);
+}
+$('btnRebuild').onclick = () => {
+  if (!rhState) return;
+  const out = solidEnts();
+  loadParsed({ ents: rhState.curves.concat(out), unsupported: rhState.unsupported, insunits: 0 }, rhState.u);
+  if (cad && cad.raw) $('cadInfo').insertAdjacentHTML('beforeend', `<br>선택한 레이어로 건물 윤곽 ${out.length}개를 다시 만들었어요.`);
+};
+
+/* ---- 지도에서 필지 고르기 (VWorld 연속지적도) ---- */
+// ponytail: 필지는 클릭한 한 점으로 조회(여러 필지 합필·분할 지정은 없음). 용도지역 이름은 필드명을 못 찾으면 비워 두고 직접 고르게 함.
+const VW = 'https://api.vworld.kr/req/', LF = 'https://unpkg.com/leaflet@1.9.4/dist/';
+let lmap = null;
+const vwQ = o => Object.entries(Object.assign({ key: $('vwKey').value.trim(), domain: $('vwDom').value.trim() }, o)).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+function jsonp(url) {    // 스크립트 태그 방식(JSONP): 도면 파일과 달리 요청 주소에 좌표·검색어가 실려 나감
+  return new Promise((ok, no) => {
+    const cb = '_vw' + Date.now() + Math.floor(Math.random() * 1e4), s = document.createElement('script');
+    const done = () => { delete window[cb]; s.remove(); clearTimeout(tm); }, tm = setTimeout(() => { done(); no(new Error('응답 시간 초과')); }, 12000);
+    window[cb] = d => { done(); ok(d); }; s.onerror = () => { done(); no(new Error('연결 실패')); };
+    s.src = url + '&callback=' + cb; document.head.appendChild(s);
+  });
+}
+async function vwData(layer, lng, lat) {
+  const d = (await jsonp(VW + 'data?' + vwQ({ service: 'data', request: 'GetFeature', data: layer, geomFilter: `POINT(${lng} ${lat})`, geometry: 'true', attribute: 'true', crs: 'EPSG:4326', size: 10, format: 'json' }))).response;
+  if (d.status === 'NOT_FOUND') return [];
+  if (d.status !== 'OK') throw new Error((d.error && d.error.text) || d.status);
+  return d.result.featureCollection.features;
+}
+async function vwSearch(q) {
+  for (const category of ['parcel', 'road']) {
+    const d = (await jsonp(VW + 'search?' + vwQ({ service: 'search', request: 'search', version: '2.0', crs: 'EPSG:4326', size: 1, page: 1, query: q, type: 'address', category, format: 'json', errorformat: 'json' }))).response;
+    if (d.status === 'OK' && d.result.items.length) { const it = d.result.items[0]; return { lng: +it.point.x, lat: +it.point.y }; }
+    if (d.status === 'ERROR') throw new Error((d.error && d.error.text) || '검색 오류');
+  }
+  return null;
+}
+function viewAt(lat, lng, z) { lmap.setView([lat, lng], z, { animate: false }); }
+async function openMap() {
+  const key = $('vwKey').value.trim(); if (!key) return msg($('mapMsg'), ['VWorld 인증키를 먼저 넣어 주세요.']);
+  try { localStorage.setItem('lawTool.vwKey', key); localStorage.setItem('lawTool.vwDom', $('vwDom').value.trim()); } catch (e) {}
+  msg($('mapMsg'), ['지도를 불러오는 중…']);
+  try { if (!window.L) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = LF + 'leaflet.css'; document.head.appendChild(l); await loadScript(LF + 'leaflet.js'); } }
+  catch (e) { return msg($('mapMsg'), ['지도 라이브러리를 내려받지 못했어요. 인터넷 연결을 확인해 주세요.']); }
+  msg($('mapMsg'), []); show($('mapWork')); show($('btnMapOpen'), false);
+  if (lmap) { lmap.remove(); lmap = null; }
+  // OSM·CARTO 타일은 파일(file://)로 열면 차단돼서(403·키 요구) 쓰지 않음. VWorld 일반 지도가 기본, 타일이 안 불러와지면 Esri(저배율을 늘려 보여 줌)로 바꿈.
+  const vbase = L.tileLayer(`${VW}wmts/1.0.0/${key}/white/{z}/{y}/{x}.png`, { maxZoom: 21, maxNativeZoom: 19, attribution: 'VWorld' }),
+    vdark = L.tileLayer(`${VW}wmts/1.0.0/${key}/midnight/{z}/{y}/{x}.png`, { maxZoom: 21, maxNativeZoom: 19, attribution: 'VWorld' }),
+    vnorm = L.tileLayer(`${VW}wmts/1.0.0/${key}/Base/{z}/{y}/{x}.png`, { maxZoom: 21, maxNativeZoom: 19, attribution: 'VWorld' }),
+    esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 18, attribution: 'Esri' }),   // 일반 지도(World_Street_Map)는 한국 고배율 타일이 없어서 위성으로
+    sat = L.tileLayer(`${VW}wmts/1.0.0/${key}/Satellite/{z}/{y}/{x}.jpeg`, { maxZoom: 21, maxNativeZoom: 19, attribution: 'VWorld' }),
+    cada = L.tileLayer.wms(VW + 'wms', { layers: 'lp_pa_cbnd_bubun,lp_pa_cbnd_bonbun', styles: 'lp_pa_cbnd_bubun_line,lp_pa_cbnd_bonbun_line', format: 'image/png', transparent: true, version: '1.3.0', key, domain: $('vwDom').value.trim(), maxZoom: 21, minZoom: 17, className: 'cada-layer' });
+  lmap = L.map('lmap', { layers: [vbase, cada], maxBounds: DAEGU_BOUNDS, maxBoundsViscosity: 0.9, minZoom: 10, zoomControl: false });
+  L.control.zoom({ position: 'topright' }).addTo(lmap); viewAt(35.8714, 128.6014, 17);
+  cada.setOpacity(.42);
+  L.control.layers({ '밝은 지도': vbase, '어두운 지도': vdark, '일반 지도': vnorm, '위성': sat, 'Esri 위성(대체)': esri }, { '지적선(확대 시)': cada }, { position: 'topright' }).addTo(lmap);
+  let fell = false;
+  let tOk = 0, tErr = 0; vbase.on('tileload', () => tOk++);   // 타일이 연달아 실패하고 한 장도 못 불러왔을 때만 대체 지도로 바꿈
+  vbase.on('tileerror', () => { tErr++; if (fell || tErr < 4 || tOk > 0) return; fell = true; lmap.removeLayer(vbase); esri.addTo(lmap); msg($('mapMsg'), ['VWorld 지도 타일을 불러오지 못해 Esri 위성 지도로 바꿨어요. 인증키·서비스 URL(도메인)을 확인해 보세요. (필지 조회도 같은 키를 써요)']); });
+  lmap.on('click', onMapClick); setTimeout(() => lmap.invalidateSize(), 50);
+}
+// ---- 필지 선택: 하나만 골라도 되고, 눌러서 더하면 여러 개를 하나의 대지로 합침 (선택한 필지를 다시 누르면 해제) ----
+// ponytail: 합치기는 맞닿은 필지만(polygon-clipping, 처음 한 번 CDN에서 내려받음). 떨어진 필지·구멍(내부 빈 땅)은 지원 안 함.
+const PC_URL = 'https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js';
+let sel = [], lSel = null, selBusy = false, selNote = '';
+const zoneOf = p => p.names.map(zoneInfo).find(Boolean) || null;
+function renderSel() {
+  const info = $('parcelInfo'), n = sel.length;
+  if (lSel) { lSel.remove(); lSel = null; }
+  if (lmap && n) lSel = L.layerGroup(sel.map(p => L.geoJSON({ type: 'Feature', geometry: p.geom, properties: {} }, { style: { color: '#1F4FA8', weight: 3, fillColor: '#1F4FA8', fillOpacity: .22 }, interactive: false }))).addTo(lmap);
+  $('btnParcelUse').disabled = !n; $('btnParcelClear').disabled = !n;
+  $('btnParcelUse').textContent = n > 1 ? `선택한 ${n}개 필지를 하나의 대지로 쓰기` : '이 필지를 대지로 쓰기';
+  const note = selNote ? `<p class="hint" style="margin:.3em 0">${selNote}</p>` : '';
+  if (!n) { info.innerHTML = '지도에서 내 땅을 눌러 보세요. 필지를 더 눌러 <b>두 개 이상</b> 합칠 수도 있고, 선택한 필지를 다시 누르면 해제돼요.' + note; return; }
+  const total = sel.reduce((a, p) => a + p.area, 0), zis = sel.map(zoneOf), zn = new Set(zis.filter(Boolean).map(z => z[0])), allNames = [...new Set(sel.flatMap(p => p.names))];
+  const mixed = zn.size > 1, missing = sel.some((p, i) => !zis[i]), zi = zn.size === 1 && !missing ? zis[0] : null;
+  info.innerHTML = '<div>' + sel.map((p, i) => `<span class="chip">${esc((p.addr || '').replace(/^대구광역시\s*/, '') || '필지')} · ${f(p.area)}㎡<button class="x" data-rm="${i}" aria-label="이 필지 선택 해제" title="선택 해제">×</button></span>`).join('') + '</div>' +
+    `<p style="margin:.35em 0 .1em"><b>${n > 1 ? `합계 면적 (${n}필지)` : '면적(계산값)'}</b> ${f(total)}㎡ <span class="hint">— 토지대장 면적과 다를 수 있어요.</span></p>` +
+    `<p style="margin:.1em 0"><b>용도지역</b> ${allNames.length ? esc(allNames.join(', ')) : '조회 결과 없음 — 직접 고르세요.'}</p>` +
+    (mixed ? '<p class="bad" style="margin:.2em 0">필지마다 용도지역이 달라요. 쓴 뒤에 용도지역을 직접 고르고, 건폐율·용적률은 구역별로 따져 봐야 해요.</p>' : '') +
+    (zi ? `<p class="hint" style="margin:.2em 0">쓰기를 누르면 용도지역만 채우고, <b>건폐율·용적률 칸은 비워 둬요.</b> 참고로 국토계획법 시행령 상한은 건폐율 ${zi[2]}%·용적률 ${zi[3]}%이고, 대구 도시계획 조례 값은 이보다 같거나 낮아요. <b>토지이용계획확인서(토지이음 eum.go.kr)</b>나 대구 조례에서 확인해 입력하세요.${/7층|18층/.test(allNames.join()) ? ' 대구 제2종일반주거지역은 7층/18층 구분에 따라 값이 달라요.' : ''}</p>` : '') + note;
+}
+async function onMapClick(e) {
+  if (selBusy) return;
+  const { lat, lng } = e.latlng; selBusy = true; selNote = '필지를 찾는 중…'; renderSel();
+  try {
+    const [pf, zf] = await Promise.all([vwData('LP_PA_CBND_BUBUN', lng, lat), vwData('LT_C_UQ111', lng, lat).catch(() => null)]);
+    if (!pf.length) { selNote = '이 위치에서 필지를 찾지 못했어요. (도로·하천이거나, 지적선이 보이는 확대 수준이 아닐 수 있어요.)'; return; }
+    const ft = pf[0], g = ft.geometry, pr = ft.properties || {}, polys = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
+    if (pr.addr && !isDaegu(pr.addr)) { selNote = `<span class="bad">대구 밖 필지예요 (${esc(pr.addr)}).</span> 이 도구는 대구 안에서만 써요.`; return; }
+    const id = pr.pnu || JSON.stringify(polys[0][0][0]), at = sel.findIndex(p => p.id === id);
+    if (at >= 0) sel.splice(at, 1);                                   // 선택한 필지를 다시 누르면 해제
+    else {
+      const rings = polys.map(p => p[0]), names = (zf || []).map(z => (z.properties || {}).uname || (z.properties || {}).dgm_nm || '').filter(Boolean);
+      sel.push({ id, geom: g, rings, addr: pr.addr || '', names, area: rings.reduce((a, r) => a + polyArea(llToLocal(r).pts), 0) });
+    }
+    selNote = '';
+  } catch (err) { selNote = `<span class="bad">조회에 실패했어요: ${esc(err.message)}</span> 인증키, 키에 등록한 서비스 URL(도메인), 인터넷 연결을 확인해 주세요.`; }
+  finally { selBusy = false; renderSel(); }
+}
+async function useParcel() {
+  if (!sel.length) return;
+  const rings = sel.flatMap(p => p.rings), lo = llToLocalMulti(rings);
+  let enu = lo.list[0];
+  if (lo.list.length > 1) {                                            // 여러 필지 → 맞닿은 윤곽 하나로 합침
+    msg($('mapMsg'), ['필지를 합치는 중…']);
+    try { if (!window.polygonClipping) await loadScript(PC_URL); }
+    catch (e) { return msg($('mapMsg'), ['필지 합치기 라이브러리를 내려받지 못했어요. 인터넷 연결을 확인하거나, 필지를 하나만 골라 쓰세요.']); }
+    const q = v => Math.round(v * 1000) / 1000, polys = lo.list.map(pts => { const r = pts.map(p => [q(p[0]), q(p[1])]); r.push(r[0]); return [r]; });
+    const u = polygonClipping.union(...polys);
+    if (u.length !== 1) return msg($('mapMsg'), ['선택한 필지가 서로 붙어 있지 않아요. 맞닿은 필지만 골라 주세요. (떨어진 필지는 하나의 대지로 합칠 수 없어요)']);
+    enu = u[0][0].slice(0, -1);
+  }
+  msg($('mapMsg'), []);
+  parcel = { enu, addr: (sel[0].addr || '') + (sel.length > 1 ? ` 외 ${sel.length - 1}필지` : '') };
+  const zis = sel.map(zoneOf), zn = new Set(zis.filter(Boolean).map(z => z[0])), zi = zn.size === 1 && zis.every(Boolean) ? zis[0] : null;
+  if (zi) { $('zone').value = zi[1]; $('bcrLimit').value = ''; $('farLimit').value = ''; $('bcrLimit').placeholder = $('farLimit').placeholder = '대구 조례 값 입력'; zoneHint(); }   // 시행령 상한은 대구 조례보다 높을 수 있어 채우지 않음
+  if (!cad || cad.map) {   // 도면이 없으면 필지만 놓고 건물은 직접 그리게 함
+    cad = cadBase({ tool: 'bdraw', s: 1, ok: true, bb: null }); cad.bb0 = null; cad.pOff = [0, 0];
+    $('cadBg').innerHTML = ''; $('cadInfo').innerHTML = '지도에서 가져온 대지만 있어요. <b>건물 직접 그리기</b>로 건물 윤곽을 그리거나, 위에서 .3dm·DXF 파일을 올리면 이 대지가 그 건물 쪽으로 옮겨져요. 북쪽은 위쪽(0°)이에요.';
+    show($('cadWork')); show($('cadPick')); show($('btnCadOk'), false); applyParcel(false);
+  } else { applyParcel(true); autoFit(); }
+  msg($('cadMsg'), []);
+  requestAnimationFrame(() => {
+    const keep = cad.bb, pts = [...cad.drawn, ...(cad.bld.size ? [...cad.bld].flatMap(i => cad.shapes[i].pts) : cad.bldDrawn.flat())];   // 필지(와 고른 건물) 주변으로 확대
+    cad.bb = [Math.min(...pts.map(p => p[0])), Math.min(...pts.map(p => p[1])), Math.max(...pts.map(p => p[0])), Math.max(...pts.map(p => p[1]))]; cadFit(); cad.bb = keep;
+    renderCad(); updateCad(); $('cadWork').scrollIntoView({ behavior: 'smooth' });
+  });
+}
+async function doSearch() {
+  let q = $('vwQuery').value.trim(); if (!q || !lmap) return;
+  if (!/^대구/.test(q)) q = '대구광역시 ' + q;   // 대구 안에서만 찾음
+  msg($('mapMsg'), ['검색 중…']);
+  try {
+    const r = await vwSearch(q); if (!r) return msg($('mapMsg'), ['검색 결과가 없어요. 동 이름과 지번까지 적어 보세요. (대구 안에서만 찾아요)']);
+    if (!L.latLngBounds(DAEGU_BOUNDS).contains([r.lat, r.lng])) return msg($('mapMsg'), ['대구 밖 주소예요. 이 도구는 대구 안에서만 써요.']);
+    msg($('mapMsg'), []); viewAt(r.lat, r.lng, 19); }
+  catch (e) { msg($('mapMsg'), ['검색에 실패했어요: ' + e.message + ' (인증키·서비스 URL·인터넷 연결을 확인해 주세요)']); }
+}
+
+// 처음 화면 세팅
+// 모두가 키 입력 없이 쓰게 하려면 아래 key에 내 VWorld 인증키를 붙여 넣고, domain은 키 발급 때 등록한 서비스 URL의 도메인으로 맞추세요.
+// 주의: 파일을 받은 사람은 누구나 코드에서 이 키를 볼 수 있어요(무료 키라 요금은 안 나오지만 호출량 제한·키 정지는 가능). 키는 발급 때 등록한 도메인에서만 쓰게 하세요.
+const VW_DEFAULT = { key: '', domain: 'localhost' };
+if (VW_DEFAULT.key) { $('vwKey').value = VW_DEFAULT.key; $('vwDom').value = VW_DEFAULT.domain; show($('vwFields'), false); }
+else try { $('vwKey').value = localStorage.getItem('lawTool.vwKey') || ''; $('vwDom').value = localStorage.getItem('lawTool.vwDom') || 'localhost'; } catch (e) {}
+$('rhFile').onchange = e => { const file = e.target.files[0]; if (file) loadRh(file); };
+
+// 진행 표시줄: 대지(면적 있음) → 계획 입력(칸이 모두 유효) → 내 설명(적음) → 결과(나옴). 값이 코드로 채워질 때도 있어서 가볍게 주기적으로 갱신
+function updateSteps() {
+  let ok = false; try { ok = readInput().errs.length === 0; } catch (e) {}
+  const done = [parseFloat($('site').value) > 0 || sel.length > 0, ok, $('myExp').value.trim().length > 0, !$('results').classList.contains('hide')], act = done.findIndex(x => !x);
+  document.querySelectorAll('.stepper .st').forEach((b, i) => { b.classList.toggle('done', done[i]); b.classList.toggle('on', i === act); });
+}
+setInterval(updateSteps, 400); updateSteps();
+document.querySelectorAll('.stepper .st').forEach(b => b.onclick = () => {
+  const k = +b.dataset.st;
+  if (k === 1) $('vwQuery').focus();
+  else if (k === 2) (['site', 'footprint', 'floors', 'floorArea', 'floorH', 'setback', 'bcrLimit', 'farLimit'].map($).find(el => !el.value.trim()) || $('site')).focus();
+  else if (k === 3) $('myExp').focus();
+  else $('btnCalc').focus();
+});
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('[data-pane]').forEach(p => show(p, p.dataset.pane === b.dataset.tab));
+});
+$('btnInfo').onclick = () => $('dlgInfo').showModal();
+$('btnSum').onclick = () => { renderSummary(); $('dlgSum').showModal(); };
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
+$('btnMapOpen').onclick = openMap; if (VW_DEFAULT.key) openMap(); $('btnParcelUse').onclick = useParcel; $('btnParcelClear').onclick = () => { sel = []; selNote = ''; renderSel(); };
+$('parcelInfo').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { sel.splice(+b.dataset.rm, 1); renderSel(); } }); $('btnVwSearch').onclick = doSearch;
+$('vwQuery').onkeydown = e => { if (e.key === 'Enter') doSearch(); };
+$('lawList').innerHTML = [
+  `근거 조문: ${RULES.basis} (조문 번호·내용 모두 확인)`,
+  `일조사선 적용 용도지역: ${RULES.sunZones.map(z => z + '주거').join('·')}지역만`,
+  `기준 높이 ${RULES.thresholdH}m`, `${RULES.thresholdH}m 이하 부분: 정북 경계에서 ${RULES.minSetback}m 이상`,
+  `${RULES.thresholdH}m 초과 부분: 그 높이의 ${RULES.ratio === 0.5 ? '1/2' : RULES.ratio} 이상`,
+  `용적률 산정 기준: ${RULES.farBasis} (지하층·주차장 등 제외 항목은 직접 확인)`,
+  '건폐율·용적률 상한: 대구광역시 도시계획 조례 (60%/200%는 예시값. 지도로 필지를 고르면 이 칸은 비워지니 토지이용계획확인서·조례에서 확인해 입력. 참고용 시행령 상한은 코드의 ZONES 표)',
+  '건폐율 산정 때 제외·완화되는 부분, 일조사선 예외(공동주택 특례, 정북 방향 대지 상황)'].map(t => `<li>${esc(t)} — <b>법조문 최신본 확인 필요</b></li>`).join('');
+$('srExtra').innerHTML = SR_EXTRA.map(t => `<label style="display:inline;font-weight:normal;margin-right:14px"><input type="checkbox" value="${t}">${t}</label>`).join('');
+$('btnStart').onclick = startSession; $('btnSave').onclick = saveRecord; $('btnCalc').onclick = onCalc;
+$('btnSelf').onclick = showSelfCheck; $('btnCsv').onclick = exportCsv;
+$('btnDel').onclick = () => { if (confirm('저장된 사용 기록과 이전 계산 결과를 모두 지울까요? 되돌릴 수 없어요.')) { try { localStorage.removeItem(KEY_REC); localStorage.removeItem(KEY_PREV); } catch (e) {} renderSummary(); } };
+document.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => loadExample(Number(b.dataset.ex)));
+$('zone').onchange = zoneHint; $('perChk').onchange = renderPerFloor; $('floors').oninput = renderPerFloor;
+wireCad(); zoneHint(); renderSummary();
+</script>
+</body>
+</html>
