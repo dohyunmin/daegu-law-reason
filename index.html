@@ -394,6 +394,7 @@ main.app{grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-r
 .fitNote b{color:var(--blue)}
 
 .dock>summary{background:#fff}
+.invalid{outline:2px solid #e5483d!important;outline-offset:1px;background:#fff1f0!important}
 </style>
 </head>
 <body>
@@ -967,14 +968,14 @@ function renderPerFloor() {
 }
 // 입력 읽기 + 쉬운 말 오류 안내
 function readInput() {
-  const errs = [];
+  const errs = [], bad = [];
   const num = (id, name, o = {}) => {
     const raw = $(id).value.trim();
-    if (raw === '') { errs.push(`‘${name}’ 칸이 비어 있거나 숫자가 아니에요. 숫자를 적어 주세요.`); return null; }
+    if (raw === '') { bad.push(id); errs.push(`‘${name}’ 칸이 비어 있거나 숫자가 아니에요. 숫자를 적어 주세요.`); return null; }
     const v = Number(raw);
-    if (!isFinite(v)) { errs.push(`‘${name}’ 칸은 숫자로 적어 주세요.`); return null; }
-    if (v < 0) { errs.push(`‘${name}’ 칸에 음수(마이너스)가 들어 있어요. 0 이상으로 적어 주세요.`); return null; }
-    if (o.gt0 && v <= 0) { errs.push(`‘${name}’ 칸은 0보다 큰 숫자여야 해요.`); return null; }
+    if (!isFinite(v)) { bad.push(id); errs.push(`‘${name}’ 칸은 숫자로 적어 주세요.`); return null; }
+    if (v < 0) { bad.push(id); errs.push(`‘${name}’ 칸에 음수(마이너스)가 들어 있어요. 0 이상으로 적어 주세요.`); return null; }
+    if (o.gt0 && v <= 0) { bad.push(id); errs.push(`‘${name}’ 칸은 0보다 큰 숫자여야 해요.`); return null; }
     return v;
   };
   const zone = $('zone').value, sunOn = RULES.sunZones.includes(zone);
@@ -983,14 +984,15 @@ function readInput() {
     site: num('site', '대지면적', { gt0: 1 }), footprint: num('footprint', '건축면적'),
     floors: num('floors', '층수', { gt0: 1 }), floorH: num('floorH', '층고', { gt0: 1 }),
     setback: sunOn ? num('setback', '정북 방향 이격 거리') : (parseFloat($('setback').value) || 0), areas: [] };
-  if (inp.bcrLimit > 100) errs.push('건폐율 상한은 100%를 넘을 수 없어요.');
-  if (inp.floors !== null && (!Number.isInteger(inp.floors) || inp.floors > 30)) errs.push('‘층수’는 1~30 사이의 정수로 적어 주세요.');
+  if (inp.bcrLimit > 100) { bad.push('bcrLimit'); errs.push('건폐율 상한은 100%를 넘을 수 없어요.'); }
+  if (inp.floors !== null && (!Number.isInteger(inp.floors) || inp.floors > 30)) { bad.push('floors'); errs.push('‘층수’는 1~30 사이의 정수로 적어 주세요.'); }
   else if (inp.floors !== null) {
     if ($('perChk').checked) for (let i = 0; i < inp.floors; i++) { const v = num('fa' + i, `${i + 1}층 바닥면적`); if (v !== null) inp.areas.push(v); }
     else { const v = num('floorArea', '층별 바닥면적'); if (v !== null) inp.areas = Array(inp.floors).fill(v); }
   }
-  if (inp.site && inp.footprint !== null && inp.footprint > inp.site) errs.push('건축면적이 대지면적보다 커요. 숫자를 다시 확인해 주세요.');
-  return { inp, errs };
+  if (inp.floors === null && !$('perChk').checked && $('floorArea').value.trim() === '') bad.push('floorArea');   // 층수가 비어도 이 칸이 비었음을 같이 알림
+  if (inp.site && inp.footprint !== null && inp.footprint > inp.site) { bad.push('footprint', 'site'); errs.push('건축면적이 대지면적보다 커요. 숫자를 다시 확인해 주세요.'); }
+  return { inp, errs, bad };
 }
 
 // SVG 단면: 정북 경계선, 건물, 일조 한계선(10m까지 수직 후 1:2 사선), 걸리는 부분은 빨강+빗금
@@ -1170,9 +1172,20 @@ function exportCsv() {
    ===================================================================== */
 function onCalc() {
   show($('calcMsg'), false); msg($('inErr'), []);
-  if (!session || session.end) { msg($('calcMsg'), ['먼저 위쪽 "0. 사용 기록 시작"에서 별칭을 적고 "사용 시작"을 눌러 주세요. (타이머가 켜져요)']); return; }
-  const { inp, errs } = readInput();
-  if (errs.length) { msg($('inErr'), errs); show($('results'), false); $('inErr').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+  const noSess = !session || session.end, { inp, errs, bad } = readInput();
+  if (noSess || errs.length) {                       // 덜 입력한 곳을 한 번에 안내 (빨간 칸 + 첫 칸으로 이동)
+    const lab = id => (document.querySelector(`label[for="${id}"]`) || { textContent: id }).textContent.replace(/\s*[(（].*$/, '').trim();
+    const ids = [...new Set([...(noSess ? [$('alias').value.trim() ? 'btnStart' : 'alias'] : []), ...bad])];
+    ids.forEach(id => $(id) && $(id).classList.add('invalid'));
+    const site = bad.includes('site') || bad.includes('footprint');
+    msg($('calcMsg'), [...(noSess ? ['먼저 위쪽 "사용 기록"에서 별칭(실명 말고 별명)을 적고 "사용 시작"을 눌러 주세요. (타이머가 켜져요)'] : []),
+      ...(bad.length ? [`계획 입력에서 ${new Set(bad).size}곳을 채우거나 고쳐 주세요: ${[...new Set(bad)].map(lab).join(', ')} (빨간 칸)`] : []),
+      ...(site ? ['대지면적·건축면적은 "지도에서 내 땅 고르기"로 필지를 고르거나 ".3dm·DXF 파일"을 올리면 자동으로 채워져요. 지도·파일을 안 쓰면 숫자를 직접 적어도 돼요.'] : []), ...errs.filter(e => !e.includes('비어 있거나'))]);   // 빈 칸은 위 요약에 이미 있음
+    show($('results'), false);
+    const first = $(ids[0]); if (first) { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); first.focus({ preventScroll: true }); } else $('calcMsg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   session.calcs++; tick();
   const r = calc(inp), e = explain(inp, r), cur = snapshot(inp, r);
   renderResults(inp, r, e);
