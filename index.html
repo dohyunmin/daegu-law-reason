@@ -1337,14 +1337,16 @@ function updateCad() {
     '<p class="hint">정북 이격 = 건물 각 부분에서 정북 쪽으로 쏜 선이 대지 경계와 만나는 거리 중 가장 짧은 값.</p>' +
     (map ? '<p class="hint">지도 이미지에서 찍은 값은 이미지 해상도와 축척을 맞춘 정확도만큼 오차가 있어요. 정확한 면적은 지적도·토지대장으로 확인하세요.</p>' : '');
   $('btnFill').disabled = !(r.siteArea && r.bldArea);
-  $('fillHint').textContent = $('btnFill').disabled ? '대지와 건물이 모두 정해지면 눌러져요.' : '눌러서 대지면적·건축면적·정북 이격을 왼쪽 계획 입력칸에 채워요.';
+  $('fillHint').textContent = $('btnFill').disabled ? '대지와 건물이 모두 정해지면 자동으로 채워져요.' : '대지면적·건축면적·정북 이격을 계획 입력칸에 자동으로 채웠어요. 도면이 바뀌면 다시 채워요. (다시 채우려면 눌러요)';
+  const sig = r.siteArea && r.bldArea ? [r.siteArea, r.bldArea, r.setback].map(v => v == null ? '' : Math.round(v * 100)).join('|') : '';
+  if (sig && sig !== cad.filled) { cad.filled = sig; cadFill(true); }   // 도형이 바뀐 때만 자동 채움 → 손으로 고친 값은 유지
 }
-function cadFill() {
+function cadFill(auto) {
   const r = cadResult(), set = (id, v) => $(id).value = Math.round(v * 100) / 100;
   set('site', r.siteArea); set('footprint', r.bldArea); if (r.setback != null) set('setback', r.setback);
   const n = $('drawNote'); n.textContent = `${cad.map ? '지도' : '도면'}에서 가져온 값: 대지면적 ${f(r.siteArea)}㎡, 건축면적 ${f(r.bldArea)}㎡` + (r.setback != null ? `, 정북 이격 ${f(r.setback)}m` : ', 정북 이격은 계산하지 못해 직접 입력해야 해요') + '. 고쳐도 돼요. 층수·층고·층별 바닥면적은 직접 입력하세요.';
   if (cad.pOn) n.textContent += ` 대지는 지도(VWorld) 필지이고 면적은 참고용이에요(토지대장 확인). 건폐율·용적률 칸은 비어 있으면 대구 도시계획 조례 값을 확인해 직접 입력하세요.`;
-  show(n); $('sec-input').scrollIntoView({ behavior: 'smooth' });
+  show(n); if (auto !== true) $('sec-input').scrollIntoView({ behavior: 'smooth' });
 }
 function wireCad() {
   $('dxfFile').onchange = e => {
