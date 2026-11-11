@@ -1750,7 +1750,7 @@ async function doSearch() {
 // 주의: 파일을 받은 사람은 누구나 코드에서 이 키를 볼 수 있어요(무료 키라 요금은 안 나오지만 호출량 제한·키 정지는 가능). 키는 발급 때 등록한 도메인에서만 쓰게 하세요.
 // 링크 뒤에 #vw=키&dom=도메인 을 붙여 열면 그 키를 이 브라우저에만 저장해서 씀 (저장소 코드에 키를 넣지 않고 학생에게는 링크로 전달하는 용). 저장 뒤 주소창에서는 지워짐.
 try { const h = new URLSearchParams(location.hash.slice(1)); if (h.get('vw')) { localStorage.setItem('lawTool.vwKey', h.get('vw')); localStorage.setItem('lawTool.vwDom', h.get('dom') || 'localhost'); history.replaceState(null, '', location.pathname + location.search); } } catch (e) {}
-const VW_DEFAULT = { key: '', domain: 'localhost' };
+const VW_DEFAULT = { key: '5521BCDD-6B8E-4B17-830A-EC9B8DEB33A8', domain: 'dohyunmin.github.io' };
 if (VW_DEFAULT.key) { $('vwKey').value = VW_DEFAULT.key; $('vwDom').value = VW_DEFAULT.domain; show($('vwFields'), false); }
 else try { $('vwKey').value = localStorage.getItem('lawTool.vwKey') || ''; $('vwDom').value = localStorage.getItem('lawTool.vwDom') || 'localhost'; if ($('vwKey').value) show($('vwFields'), false); } catch (e) {}
 $('rhFile').onchange = e => { const file = e.target.files[0]; if (file) loadRh(file); };
