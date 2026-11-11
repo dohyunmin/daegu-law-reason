@@ -625,7 +625,7 @@ main.app{grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-r
   <div id="sumOut"></div>
   <button id="btnCsv" class="sub">CSV 내보내기</button>
   <button id="btnDel" class="sub">전체 삭제</button>
-  <button id="btnImp" class="sub">기록 가져오기 (JSON)</button><input type="file" id="impFile" accept=".json,application/json" class="hide"> <span id="impMsg" class="hint"></span>
+  <button id="btnImp" class="sub">기록 가져오기 (JSON)</button><button id="btnTestRec" class="sub">테스트 기록 불러오기 (대봉동 근생 3건)</button><input type="file" id="impFile" accept=".json,application/json" class="hide"> <span id="impMsg" class="hint"></span>
 </section>
 </div></dialog>
 
@@ -1908,19 +1908,21 @@ $('lawList').innerHTML = [
   '건폐율 산정 때 제외·완화되는 부분, 일조사선 예외(공동주택 특례, 정북 방향 대지 상황)'].map(t => `<li>${esc(t)} — <b>법조문 최신본 확인 필요</b></li>`).join('');
 $('srExtra').innerHTML = SR_EXTRA.map(t => `<label style="display:inline;font-weight:normal;margin-right:14px"><input type="checkbox" value="${t}">${t}</label>`).join('');
 $('btnImp').onclick = () => $('impFile').click();
+function importRecs(list) {   // 같은 id는 건너뛰고, 형식이 맞는 것만 저장
+  const ok = r => r && Number.isFinite(r.id) && typeof r.alias === 'string' && ['실사용', '예시 테스트'].includes(r.mode) && [r.minutes, r.calcs, r.score].every(Number.isFinite) && ['예', '애매', '아니오'].includes(r.yn);
+  const good = list.filter(ok), all = ld(KEY_REC, []), have = new Set(all.map(r => r.id)), add = good.filter(r => !have.has(r.id));
+  if (!list.length) throw new Error('기록 목록(JSON 배열)이 아니에요');
+  if (add.length && !sv(KEY_REC, [...all, ...add])) throw new Error('이 브라우저에서는 저장이 막혀 있어요');
+  $('impMsg').textContent = `${add.length}건 가져왔어요` + (good.length - add.length ? ` · 이미 있는 ${good.length - add.length}건은 건너뜀` : '') + (list.length - good.length ? ` · 형식이 맞지 않는 ${list.length - good.length}건은 제외` : '');
+  renderSummary();
+}
 $('impFile').onchange = async e => {
   const file = e.target.files[0]; e.target.value = ''; if (!file) return;
-  try {
-    const arr = JSON.parse(await file.text()), list = Array.isArray(arr) ? arr : [];
-    const ok = r => r && Number.isFinite(r.id) && typeof r.alias === 'string' && ['실사용', '예시 테스트'].includes(r.mode) && [r.minutes, r.calcs, r.score].every(Number.isFinite) && ['예', '애매', '아니오'].includes(r.yn);
-    const good = list.filter(ok), all = ld(KEY_REC, []), have = new Set(all.map(r => r.id)), add = good.filter(r => !have.has(r.id));
-    if (!list.length) throw new Error('기록 목록(JSON 배열)이 아니에요');
-    if (add.length && !sv(KEY_REC, [...all, ...add])) throw new Error('이 브라우저에서는 저장이 막혀 있어요');
-    $('impMsg').textContent = `${add.length}건 가져왔어요` + (good.length - add.length ? ` · 이미 있는 ${good.length - add.length}건은 건너뜀` : '') + (list.length - good.length ? ` · 형식이 맞지 않는 ${list.length - good.length}건은 제외` : '');
-    renderSummary();
-  } catch (err) { $('impMsg').textContent = '가져오지 못했어요: ' + err.message; }
+  try { const arr = JSON.parse(await file.text()); importRecs(Array.isArray(arr) ? arr : []); } catch (err) { $('impMsg').textContent = '가져오지 못했어요: ' + err.message; }
 };
-$('btnExText').onclick = () => { if (!$('myExp').value.trim()) $('myExp').value = $('exText').textContent.trim(); };
+// 대봉동 근린생활시설 테스트 3건 (스크립트로 돌린 값이라 시간은 의미 없음, 이해도·설명 가능 여부는 시나리오용) — 줄마다 삭제 가능
+const TEST_RECS = [{"id":1794412829484,"alias":"테스트-근생1","group":"기타","mode":"실사용","start":1794412829484,"end":1794412833254,"minutes":0.1,"baseline":null,"calcs":1,"score":4,"yn":"예","srNote":"","srLaw":"","srExtra":[]},{"id":1794412855245,"alias":"테스트-근생2","group":"기타","mode":"실사용","start":1794412855245,"end":1794412858592,"minutes":0.1,"baseline":null,"calcs":1,"score":3,"yn":"애매","srNote":"","srLaw":"","srExtra":[]},{"id":1794412880595,"alias":"테스트-근생3","group":"기타","mode":"실사용","start":1794412880595,"end":1794412883952,"minutes":0.1,"baseline":null,"calcs":1,"score":4,"yn":"예","srNote":"","srLaw":"","srExtra":[]}];
+$('btnTestRec').onclick = () => { try { importRecs(TEST_RECS); } catch (err) { $('impMsg').textContent = '가져오지 못했어요: ' + err.message; } };
 $('btnStart').onclick = startSession; $('btnSave').onclick = saveRecord; $('btnCalc').onclick = onCalc;
 $('btnSelf').onclick = showSelfCheck; $('btnCsv').onclick = exportCsv;
 $('sumOut').onclick = e => {
