@@ -1620,7 +1620,7 @@ $('btnRebuild').onclick = () => {
 // ponytail: 필지는 클릭한 한 점으로 조회(여러 필지 합필·분할 지정은 없음). 용도지역 이름은 필드명을 못 찾으면 비워 두고 직접 고르게 함.
 const VW = 'https://api.vworld.kr/req/', LF = 'https://unpkg.com/leaflet@1.9.4/dist/';
 let lmap = null;
-const vwQ = o => Object.entries(Object.assign({ key: $('vwKey').value.trim(), domain: $('vwDom').value.trim() }, o)).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+const vwQ = o => Object.entries(Object.assign({ key: $('vwKey').value.trim(), domain: $('vwDom').value.trim() }, o)).filter(([k, v]) => v !== '').map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
 function jsonp(url) {    // 스크립트 태그 방식(JSONP): 도면 파일과 달리 요청 주소에 좌표·검색어가 실려 나감
   return new Promise((ok, no) => {
     const cb = '_vw' + Date.now() + Math.floor(Math.random() * 1e4), s = document.createElement('script');
@@ -1658,7 +1658,7 @@ async function openMap() {
     vnorm = L.tileLayer(`${VW}wmts/1.0.0/${key}/Base/{z}/{y}/{x}.png`, { maxZoom: 21, maxNativeZoom: 19, attribution: 'VWorld' }),
     esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 18, attribution: 'Esri' }),   // 일반 지도(World_Street_Map)는 한국 고배율 타일이 없어서 위성으로
     sat = L.tileLayer(`${VW}wmts/1.0.0/${key}/Satellite/{z}/{y}/{x}.jpeg`, { maxZoom: 21, maxNativeZoom: 19, attribution: 'VWorld' }),
-    cada = L.tileLayer.wms(VW + 'wms', { layers: 'lp_pa_cbnd_bubun,lp_pa_cbnd_bonbun', styles: 'lp_pa_cbnd_bubun_line,lp_pa_cbnd_bonbun_line', format: 'image/png', transparent: true, version: '1.3.0', key, domain: $('vwDom').value.trim(), maxZoom: 21, minZoom: 17, className: 'cada-layer' });
+    cada = L.tileLayer.wms(VW + 'wms', { layers: 'lp_pa_cbnd_bubun,lp_pa_cbnd_bonbun', styles: 'lp_pa_cbnd_bubun_line,lp_pa_cbnd_bonbun_line', format: 'image/png', transparent: true, version: '1.3.0', key, ...($('vwDom').value.trim() && { domain: $('vwDom').value.trim() }), maxZoom: 21, minZoom: 17, className: 'cada-layer' });
   lmap = L.map('lmap', { layers: [vbase, cada], maxBounds: DAEGU_BOUNDS, maxBoundsViscosity: 0.9, minZoom: 10, zoomControl: false });
   L.control.zoom({ position: 'topright' }).addTo(lmap); viewAt(35.8714, 128.6014, 17);
   cada.setOpacity(.42);
@@ -1758,7 +1758,7 @@ async function doSearch() {
 // 주의: 파일을 받은 사람은 누구나 코드에서 이 키를 볼 수 있어요(무료 키라 요금은 안 나오지만 호출량 제한·키 정지는 가능). 키는 발급 때 등록한 도메인에서만 쓰게 하세요.
 // 링크 뒤에 #vw=키&dom=도메인 을 붙여 열면 그 키를 이 브라우저에만 저장해서 씀 (저장소 코드에 키를 넣지 않고 학생에게는 링크로 전달하는 용). 저장 뒤 주소창에서는 지워짐.
 try { const h = new URLSearchParams(location.hash.slice(1)); if (h.get('vw')) { localStorage.setItem('lawTool.vwKey', h.get('vw')); localStorage.setItem('lawTool.vwDom', h.get('dom') || 'localhost'); history.replaceState(null, '', location.pathname + location.search); } } catch (e) {}
-const VW_DEFAULT = { key: '5521BCDD-6B8E-4B17-830A-EC9B8DEB33A8', domain: 'dohyunmin.github.io' };
+const VW_DEFAULT = { key: '5521BCDD-6B8E-4B17-830A-EC9B8DEB33A8', domain: '' };   // 이 키는 domain 값을 보내면 거부됨 → 비우고 Referer(호스팅 주소)로만 확인
 if (VW_DEFAULT.key) { $('vwKey').value = VW_DEFAULT.key; $('vwDom').value = VW_DEFAULT.domain; show($('vwFields'), false); }
 else try { $('vwKey').value = localStorage.getItem('lawTool.vwKey') || ''; $('vwDom').value = localStorage.getItem('lawTool.vwDom') || 'localhost'; if ($('vwKey').value) show($('vwFields'), false); } catch (e) {}
 $('rhFile').onchange = e => { const file = e.target.files[0]; if (file) loadRh(file); };
