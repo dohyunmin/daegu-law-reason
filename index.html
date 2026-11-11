@@ -467,7 +467,8 @@ main.app{grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-r
     <div><label for="floorArea">층별 바닥면적 (㎡)</label><input type="number" id="floorArea" step="any" inputmode="decimal">
       <p class="hint"><label style="display:inline;font-weight:normal"><input type="checkbox" id="perChk">층마다 다르게 입력</label></p>
       <p class="hint">용적률은 <b>지상층 연면적</b> 기준이에요. 지하층 등 제외되는 면적은 빼고 입력하세요(단순화).</p></div>
-    <div><label for="floorH">층고 (m)</label><input type="number" id="floorH" step="any" inputmode="decimal"></div>
+    <div><label for="floorH">층고 (m)</label><input type="number" id="floorH" step="any" inputmode="decimal">
+      <p class="hint">정북 일조사선(일반·전용 주거지역)에서만 필요해요. 그 외 지역은 비워도 돼요.</p></div>
     <div><label for="setback">정북 이격 거리 (m)</label><input type="number" id="setback" step="any" inputmode="decimal">
       <p class="hint">정북 방향 인접 대지경계선까지의 거리 = 건물 북쪽 외벽에서 정북 쪽 경계선까지 거리. 모든 층이 같은 위치라고 가정해요.</p></div>
   </div>
@@ -653,7 +654,7 @@ function calc(inp) {
   r.farOver = r.total - r.farAllowed > EPS;
   r.farOverArea = r.farOver ? r.total - r.farAllowed : 0;
   r.farOverPt = r.farOver ? r.far - inp.farLimit : 0;
-  r.height = inp.floors * inp.floorH;
+  r.height = inp.floorH ? inp.floors * inp.floorH : null;
   r.sun = RULES.sunZones.includes(inp.zone) ? sunCalc(inp) : null;
   return r;
 }
@@ -982,7 +983,7 @@ function readInput() {
   const inp = { zone,
     bcrLimit: num('bcrLimit', '건폐율 상한', { gt0: 1 }), farLimit: num('farLimit', '용적률 상한', { gt0: 1 }),
     site: num('site', '대지면적', { gt0: 1 }), footprint: num('footprint', '건축면적'),
-    floors: num('floors', '층수', { gt0: 1 }), floorH: num('floorH', '층고', { gt0: 1 }),
+    floors: num('floors', '층수', { gt0: 1 }), floorH: sunOn ? num('floorH', '층고', { gt0: 1 }) : (parseFloat($('floorH').value) > 0 ? parseFloat($('floorH').value) : null),   // 층고·정북 이격은 일조사선(일반·전용)에만 필요
     setback: sunOn ? num('setback', '정북 방향 이격 거리') : (parseFloat($('setback').value) || 0), areas: [] };
   if (inp.bcrLimit > 100) { bad.push('bcrLimit'); errs.push('건폐율 상한은 100%를 넘을 수 없어요.'); }
   if (inp.floors !== null && (!Number.isInteger(inp.floors) || inp.floors > 30)) { bad.push('floors'); errs.push('‘층수’는 1~30 사이의 정수로 적어 주세요.'); }
@@ -1173,20 +1174,20 @@ function exportCsv() {
 function onCalc() {
   show($('calcMsg'), false); msg($('inErr'), []);
   document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
-  const noSess = !session || session.end, { inp, errs, bad } = readInput();
-  if (noSess || errs.length) {                       // 덜 입력한 곳을 한 번에 안내 (빨간 칸 + 첫 칸으로 이동)
+  const { inp, errs, bad } = readInput();   // 사용 기록(별칭·타이머)은 결과를 내는 데 필수가 아님
+  if (errs.length) {                       // 덜 입력한 곳을 한 번에 안내 (빨간 칸 + 첫 칸으로 이동)
     const lab = id => (document.querySelector(`label[for="${id}"]`) || { textContent: id }).textContent.replace(/\s*[(（].*$/, '').trim();
-    const ids = [...new Set([...(noSess ? [$('alias').value.trim() ? 'btnStart' : 'alias'] : []), ...bad])];
+    const ids = [...new Set(bad)];
     ids.forEach(id => $(id) && $(id).classList.add('invalid'));
     const site = bad.includes('site') || bad.includes('footprint');
-    msg($('calcMsg'), [...(noSess ? ['먼저 위쪽 "사용 기록"에서 별칭(실명 말고 별명)을 적고 "사용 시작"을 눌러 주세요. (타이머가 켜져요)'] : []),
+    msg($('calcMsg'), [
       ...(bad.length ? [`계획 입력에서 ${new Set(bad).size}곳을 채우거나 고쳐 주세요: ${[...new Set(bad)].map(lab).join(', ')} (빨간 칸)`] : []),
       ...(site ? ['대지면적·건축면적은 "지도에서 내 땅 고르기"로 필지를 고르거나 ".3dm·DXF 파일"을 올리면 자동으로 채워져요. 지도·파일을 안 쓰면 숫자를 직접 적어도 돼요.'] : []), ...errs.filter(e => !e.includes('비어 있거나'))]);   // 빈 칸은 위 요약에 이미 있음
     show($('results'), false);
     const first = $(ids[0]); if (first) { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); first.focus({ preventScroll: true }); } else $('calcMsg').scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
-  session.calcs++; tick();
+  if (session && !session.end) { session.calcs++; tick(); }
   const r = calc(inp), e = explain(inp, r), cur = snapshot(inp, r);
   renderResults(inp, r, e);
   renderCompare(ld(KEY_PREV, null), cur);
