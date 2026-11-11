@@ -1671,6 +1671,12 @@ async function openMap() {
 const PC_URL = 'https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js';
 let sel = [], lSel = null, selBusy = false, selNote = '';
 const zoneOf = p => p.names.map(zoneInfo).find(Boolean) || null;
+function autoZone() {   // 필지를 고르면 용도지역 칸을 바로 채움 (섞였거나 못 읽으면 그대로 둠)
+  const zis = sel.map(zoneOf);
+  if (!sel.length || !zis.every(Boolean) || new Set(zis.map(z => z[0])).size !== 1) return;
+  $('zone').value = zis[0][1]; zoneHint();
+  $('zoneHint').textContent = `지도에서 자동 선택: ${zis[0][0]}지역 · ` + $('zoneHint').textContent;
+}
 function renderSel() {
   const info = $('parcelInfo'), n = sel.length;
   if (lSel) { lSel.remove(); lSel = null; }
@@ -1701,7 +1707,7 @@ async function onMapClick(e) {
       const rings = polys.map(p => p[0]), names = (zf || []).map(z => (z.properties || {}).uname || (z.properties || {}).dgm_nm || '').filter(Boolean);
       sel.push({ id, geom: g, rings, addr: pr.addr || '', names, area: rings.reduce((a, r) => a + polyArea(llToLocal(r).pts), 0) });
     }
-    selNote = '';
+    selNote = ''; autoZone();
   } catch (err) { selNote = `<span class="bad">조회에 실패했어요: ${esc(err.message)}</span> 인증키, 키에 등록한 서비스 URL(도메인), 인터넷 연결을 확인해 주세요.`; }
   finally { selBusy = false; renderSel(); }
 }
