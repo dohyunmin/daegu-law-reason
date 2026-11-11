@@ -395,6 +395,10 @@ main.app{grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-r
 
 .dock>summary{background:#fff}
 .invalid{outline:2px solid #e5483d!important;outline-offset:1px;background:#fff1f0!important}
+.fb ul{margin:.3em 0 0;padding:0;list-style:none}.fb li{list-style:none}.fb li{margin:.45em 0;line-height:1.6}
+.fbtag{display:inline-block;border-radius:999px;padding:0 9px;font:700 .72rem/1.7 var(--font);margin-right:6px;background:#fff}
+.fbtag.good{color:var(--ok)}.fbtag.warn{color:#B26A00;background:#FFF1D6}.fbtag.ask{color:#1F4FA8;background:#E6EEFB}
+.pill.warn{color:#B26A00}
 </style>
 </head>
 <body>
@@ -472,6 +476,15 @@ main.app{grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-r
     <div><label for="setback">정북 이격 거리 (m)</label><input type="number" id="setback" step="any" inputmode="decimal">
       <p class="hint">정북 방향 인접 대지경계선까지의 거리 = 건물 북쪽 외벽에서 정북 쪽 경계선까지 거리. 모든 층이 같은 위치라고 가정해요.</p></div>
   </div>
+  <details id="xtra"><summary>추가 규정 (선택) <small>방화구획·승강기는 자동 검토 · 공동주택이면 채광·동 간격도</small></summary>
+    <div class="grid">
+      <div><label for="apt" style="display:inline"><input type="checkbox" id="apt"> 공동주택이에요 (아파트·연립·다세대 등)</label>
+        <p class="hint">체크하면 아래 두 값으로 채광 높이(인접 대지경계선)와 동 사이 거리(인동간격)를 검토해요.</p></div>
+      <div><label for="lotDist">채광창 벽면 ~ 인접 대지경계선 거리 (m)</label><input type="number" id="lotDist" step="any" inputmode="decimal"><p class="hint">가장 가까운 곳 기준, 벽면에서 직각 방향 수평거리.</p></div>
+      <div><label for="dongDist">같은 대지 마주보는 동 사이 거리 (m)</label><input type="number" id="dongDist" step="any" inputmode="decimal"><p class="hint">동이 하나면 비워도 돼요.</p></div>
+      <div><label for="dongK">인동간격 계수 (높이의 몇 배)</label><input type="number" id="dongK" step="any" inputmode="decimal" value="0.5"><p class="hint">시행령은 높이의 0.5배(도시형생활주택 0.25배) 범위에서 조례로 정해요. 대구 조례 값을 확인해 고치세요.</p></div>
+    </div>
+  </details>
   <div id="perFloor" class="grid hide"></div>
   <div id="inErr" class="warn hide" role="alert"></div>
 </section>
@@ -551,11 +564,13 @@ main.app{grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-r
 <section class="glance">
   <h2>결과 <span class="badge">규칙 기반 설명(AI 아님)</span></h2>
   <div id="resNums"></div>
+  <div id="fbOut"></div>
   <div class="glance2">
     <div class="g-svg"><h3>단면 그림</h3><div id="svgBox"></div></div>
     <div class="g-lines"><h3>크리틱용 한 줄</h3><div id="oneLines"></div></div>
   </div>
 </section>
+<details id="xtraDet" open><summary>추가 규정 검토 <small>(방화구획 · 승강기 · 공동주택 채광·동 간격)</small></summary><div id="xtraOut"></div></details>
 <details><summary>층별 일조사선 표</summary><div id="sunBox"></div></details>
 <details><summary>이유 설명 <small>(무엇을 계산했나 · 왜 있나 · 그래서 걸리나)</small></summary><div id="reasons"></div></details>
 <details><summary>생각해 볼 질문</summary><p class="hint">정답이 아니라 질문만 드려요.</p><ul class="plain" id="qs"></ul></details>
@@ -657,6 +672,69 @@ function calc(inp) {
   r.height = inp.floorH ? inp.floors * inp.floorH : null;
   r.sun = RULES.sunZones.includes(inp.zone) ? sunCalc(inp) : null;
   return r;
+}
+
+/* =====================================================================
+   [2b] 추가 규정: 건물 형태·배치에 영향을 주는 것 (전부 법조문 최신본·조례 확인 필요)
+   ===================================================================== */
+const XR = {
+  lotMul: 2,                 // 건축법 시행령 제86조③1호: 공동주택 각 부분 높이 ≤ (채광창 벽면~인접 대지경계선 수평거리)×2. 근린상업·준주거 4배, 일반·중심상업 제외
+  dongK: 0.5,                // 제86조③2호 가목: 같은 대지 마주보는 동 사이 거리 ≥ 높이×계수. 시행령은 0.5배(도시형생활주택 0.25배) 범위에서 조례로 정함 → 대구 조례 확인
+  fireLow: 1000, fireHigh: 200, fireMul: 3, fireMinTotal: 1000, fireLowMaxFloor: 10,   // 시행령 제46조·피난방화규칙 제14조: 10층 이하 1,000㎡ / 11층 이상 200㎡ 마다 구획, 자동식 소화설비 시 3배, 연면적 1,000㎡ 초과
+  emH: 31, emA1: 1500, emStep: 3000,   // 시행령 제90조: 높이 31m 초과 → 비상용 승강기, 31m 넘는 층 최대 바닥면적 1,500㎡ 이하 1대, 초과 시 3,000㎡마다 1대 가산
+  elevFloors: 6, elevTotal: 2000       // 건축법 제64조①: 6층 이상 & 연면적 2,000㎡ 이상 승강기 (예외 있음)
+};
+function extraRules(inp, r) {
+  const out = [], H = r.height, X = XR;
+  const add = (title, basis, st, pill, result) => out.push({ title, basis, st, pill, result });
+  if (inp.apt) {
+    const T1 = '공동주택 채광 높이 (인접 대지경계선)', B1 = '건축법 시행령 제86조 제3항 제1호';
+    if (!RULES.sunZones.includes(inp.zone)) add(T1, B1, 'na', '직접 확인', '용도지역이 "그 외"라서 계산하지 않았어요. 근린상업·준주거지역은 4배, 일반·중심상업지역은 적용 제외예요. 해당하는지 확인하세요.');
+    else if (inp.lotDist == null || H == null) add(T1, B1, 'na', '입력 필요', '“추가 규정”에 채광창 벽면에서 인접 대지경계선까지 거리를 넣고 층고도 넣으면 검토해요.');
+    else { const max = X.lotMul * inp.lotDist, bad = H > max + EPS;
+      add(T1, B1, bad ? 'bad' : 'ok', bad ? '기준 초과' : '통과', `건물 높이 ${f(H)}m, 허용 높이 = 경계선까지 ${f(inp.lotDist)}m × ${X.lotMul}배 = ${f(max)}m → ` + (bad ? `${f(H - max)}m 넘어요 (경계선에서 최소 ${f(H / X.lotMul)}m는 떨어져야 해요).` : '안에 들어와요.')); }
+    const T2 = '같은 대지 마주보는 동 사이 거리 (인동간격)', B2 = '건축법 시행령 제86조 제3항 제2호 가목';
+    if (inp.dongDist == null || H == null) add(T2, B2, 'na', '입력 필요', '마주보는 동이 있으면 “추가 규정”에 동 사이 거리를 넣어 주세요. (동이 하나면 비워도 돼요. 마주보는 동이 더 높으면 그 높이 기준이 될 수 있어요.)');
+    else { const need = inp.dongK * H, bad = inp.dongDist < need - EPS;
+      add(T2, B2, bad ? 'bad' : 'ok', bad ? '기준 미달' : '통과', `필요 거리 = 높이 ${f(H)}m × ${f(inp.dongK, 2)} = ${f(need)}m, 실제 ${f(inp.dongDist)}m → ` + (bad ? `${f(need - inp.dongDist)}m 부족해요.` : '충분해요.') + ' (동지 기준 9~15시 사이 2시간 연속 일조를 확보하면 이 기준 대신 쓸 수 있어요. 이 도구는 계산하지 않아요.)'); }
+  }
+  const fl = inp.areas.map((a, i) => ({ fl: i + 1, a, lim: i + 1 <= X.fireLowMaxFloor ? X.fireLow : X.fireHigh })), TF = '방화구획', BF = '건축법 시행령 제46조 · 피난·방화구조 등의 기준에 관한 규칙 제14조';
+  const over = r.total > X.fireMinTotal ? fl.filter(x => x.a > x.lim + EPS) : [], relax = over.filter(x => x.a <= x.lim * X.fireMul + EPS);
+  if (r.total <= X.fireMinTotal) add(TF, BF, 'ok', '해당 없음', `지상 연면적이 ${f(r.total)}㎡로 ${X.fireMinTotal.toLocaleString()}㎡ 이하라 이 도구 기준으로는 면적 구획 대상이 아니에요. (지하층 면적은 입력에 없어요)`);
+  else if (!over.length) add(TF, BF, 'ok', '기준 이내', `층별 바닥면적이 구획 기준(10층 이하 ${X.fireLow.toLocaleString()}㎡ · 11층 이상 ${X.fireHigh}㎡) 안이에요. (3층 이상 층과 지하층은 층마다 구획하는 규정은 별도예요)`);
+  else add(TF, BF, 'warn', '구획 필요', `${over.map(x => `${x.fl}층 ${f(x.a)}㎡`).join(', ')}이(가) 구획 기준(10층 이하 ${X.fireLow.toLocaleString()}㎡ · 11층 이상 ${X.fireHigh}㎡)을 넘어요. 내화구조 벽·방화문으로 나눠야 해요. ` + (relax.length === over.length ? `스프링클러 같은 자동식 소화설비를 설치하면 기준이 ${X.fireMul}배로 늘어서 이 층들은 나누지 않아도 돼요.` : `자동식 소화설비를 설치하면 기준이 ${X.fireMul}배로 늘어나는데, 그래도 ${over.length - relax.length}개 층은 넘어요.`));
+  const TE = '승강기 설치', BE = '건축법 제64조 제1항';
+  const needEl = inp.floors >= X.elevFloors && r.total >= X.elevTotal;
+  add(TE, BE, needEl ? 'warn' : 'ok', needEl ? '설치 대상' : '해당 없음', needEl ? `${inp.floors}층, 지상 연면적 ${f(r.total)}㎡라서 승강기를 설치해야 해요. (예외 용도가 있어요) 코어(승강기·계단) 위치와 크기가 평면에 영향을 줘요.` : `${X.elevFloors}층 이상이면서 연면적 ${X.elevTotal.toLocaleString()}㎡ 이상일 때 설치해야 하는데 지금은 아니에요.`);
+  const TM = '비상용 승강기', BM = '건축법 시행령 제90조';
+  if (H == null) add(TM, BM, 'na', '입력 필요', '층고를 넣으면 높이 31m 초과 여부를 검토해요.');
+  else if (H <= X.emH) add(TM, BM, 'ok', '해당 없음', `건물 높이 ${f(H)}m로 ${X.emH}m 이하예요.`);
+  else { const hi = inp.areas.filter((a, i) => (i + 1) * inp.floorH > X.emH), mx = Math.max(...hi), n = mx <= X.emA1 ? 1 : 1 + Math.ceil((mx - X.emA1) / X.emStep);
+    add(TM, BM, 'warn', `${n}대 이상`, `건물 높이 ${f(H)}m가 ${X.emH}m를 넘어요. ${X.emH}m 넘는 층의 최대 바닥면적 ${f(mx)}㎡ 기준으로 비상용 승강기 ${n}대 이상이 필요해요. 2대 이상이면 한곳에 몰지 않고 나눠 놓아야 해요.`); }
+  return out;
+}
+
+// 피드백: 숫자를 해석해서 "무엇이 형태를 정하는지 / 규정끼리 어떻게 부딪치는지 / 다음에 볼 것"을 알려 줌 (정해진 답은 주지 않음)
+function feedback(inp, r, xs) {
+  const out = [], sun = r.sun, add = (t, txt) => out.push({ t, txt }), H = r.height;
+  const bad = [r.bcrOver && '건폐율', r.farOver && '용적률', sun && sun.fail && '정북일조사선', ...xs.filter(x => x.st === 'bad').map(x => x.title.split(' (')[0])].filter(Boolean);
+  const bu = r.bcr / inp.bcrLimit, fu = r.far / inp.farLimit;
+  add(bad.length ? 'warn' : 'good', bad.length ? `기준을 넘은 규정이 ${bad.length}개예요: ${bad.join(', ')}.` : '건폐율·용적률·정북일조사선과 입력한 추가 규정을 모두 통과했어요.');
+  if (!r.bcrOver && !r.farOver) {
+    const tight = bu >= fu ? ['건폐율', bu, '평면을 넓게 펴는 쪽'] : ['용적률', fu, '높이·층수를 올리는 쪽'];
+    add('good', `상한 대비 사용률은 건폐율 ${f(bu * 100, 0)}%, 용적률 ${f(fu * 100, 0)}%예요. 지금은 ${tight[0]}이 더 빠듯해서 ${tight[2]}의 선택지가 좁아요.`);
+  }
+  if (r.bcrOver) add('warn', `건축면적이 ${f(r.bcrOverArea)}㎡ 넘어요. 면적을 줄이면(중정·필로티·덩어리 나누기) 같은 연면적을 내려면 층수가 늘고, 그러면 높이 때문에 일조사선·31m(비상용 승강기) 기준에 더 가까워져요. 규정끼리 이어져 있다는 점을 같이 봐야 해요.`);
+  if (r.farOver) add('warn', `연면적이 ${f(r.farOverArea)}㎡ 넘어요. 층수를 줄일지, 층별 면적을 줄일지에 따라 형태가 달라져요. 층별 면적을 줄이면 건폐율 여유가 생기고, 층수를 줄이면 일조사선이 쉬워져요.`);
+  if (sun && sun.fail) add('warn', `정북일조사선에 ${sun.failRows.map(x => x.floor + '층').join(', ')}이(가) 걸려요(최대 ${f(sun.maxShort)}m 부족). 층수·높이를 낮추기, 정북 쪽 이격을 늘리기, 위층만 단계적으로 물러나기 중 어느 쪽이 설계 의도와 맞는지 정해야 해요. 어느 쪽이든 건축면적·연면적이 바뀌니 건폐율·용적률도 다시 확인하세요.`);
+  else if (sun) { const last = sun.rows[sun.rows.length - 1], gap = inp.setback - last.req;
+    add(gap < 1 ? 'warn' : 'good', gap < 1 ? `정북 일조사선은 통과했지만 최고 높이에서 여유가 ${f(gap)}m뿐이에요. 층고나 층수를 조금만 올려도 걸릴 수 있어요.` : `정북 일조사선에 ${f(gap)}m 여유가 있어요. 그 여유를 어디에 쓸지(층 추가, 후퇴 줄이기, 테라스 등) 생각해 볼 수 있어요.`); }
+  xs.filter(x => x.st === 'bad').forEach(x => add('warn', `${x.title}: ${x.result}`));
+  const fire = xs.find(x => x.title === '방화구획'); if (fire && fire.st === 'warn') add('ask', '방화구획으로 나눠야 하는 층이 있어요. 나눈 구획이 평면·덩어리 분절과 어떻게 이어지는지(벽이 놓이는 자리, 피난 동선) 스케치로 확인해 보세요.');
+  if (xs.some(x => x.title === '비상용 승강기' && x.st === 'warn')) add('ask', `높이가 ${f(H)}m라 비상용 승강기가 필요해요. 코어를 한곳에 둘지 나눌지가 평면과 외관에 영향을 줘요. 31m 아래로 맞추면 달라지는 것은 무엇일까요?`);
+  if (!inp.apt) add('ask', '공동주택이라면 “추가 규정”에서 체크해서 인접 대지경계선(높이 ≤ 거리×2)과 동 사이 거리도 확인해 보세요.');
+  add('ask', '이 피드백은 입력한 숫자만으로 규칙을 읽은 거예요. 지하층, 지자체 조례, 도로·높이지구·경관 규정은 반영하지 않았으니 실제 설계에서는 확인이 더 필요해요.');
+  return out;
 }
 
 // 이유 설명: 계산 → 결과 → 왜 있나 → 그래서 걸린다 + 크리틱용 한 줄 (해법은 쓰지 않음)
@@ -985,6 +1063,11 @@ function readInput() {
     site: num('site', '대지면적', { gt0: 1 }), footprint: num('footprint', '건축면적'),
     floors: num('floors', '층수', { gt0: 1 }), floorH: sunOn ? num('floorH', '층고', { gt0: 1 }) : (parseFloat($('floorH').value) > 0 ? parseFloat($('floorH').value) : null),   // 층고·정북 이격은 일조사선(일반·전용)에만 필요
     setback: sunOn ? num('setback', '정북 방향 이격 거리') : (parseFloat($('setback').value) || 0), areas: [] };
+  inp.apt = $('apt').checked; inp.lotDist = inp.dongDist = null; inp.dongK = XR.dongK;   // 추가 규정(선택): 공동주택일 때만 읽음
+  if (inp.apt) {
+    const opt = (id, name) => { const raw = $(id).value.trim(); if (raw === '') return null; const v = Number(raw); if (!isFinite(v) || v < 0) { bad.push(id); errs.push(`‘${name}’ 칸은 0 이상의 숫자로 적어 주세요.`); return null; } return v; };
+    inp.lotDist = opt('lotDist', '인접 대지경계선까지 거리'); inp.dongDist = opt('dongDist', '마주보는 동 사이 거리'); inp.dongK = opt('dongK', '인동간격 계수') || XR.dongK;
+  }
   if (inp.bcrLimit > 100) { bad.push('bcrLimit'); errs.push('건폐율 상한은 100%를 넘을 수 없어요.'); }
   if (inp.floors !== null && (!Number.isInteger(inp.floors) || inp.floors > 30)) { bad.push('floors'); errs.push('‘층수’는 1~30 사이의 정수로 적어 주세요.'); }
   else if (inp.floors !== null) {
@@ -1053,6 +1136,9 @@ function renderResults(inp, r, e) {
       s.rows.map(x => `<tr class="${x.fail ? 'fail' : ''}"><td>${x.floor}층</td><td>${f(x.top)}</td><td>${f(x.req)}</td><td>${f(x.actual)}</td><td>${x.fail ? f(x.short) : '-'}</td><td>${x.fail ? '걸림 ✖' : '통과 ✔'}</td></tr>`).join('') + '</table></div>';
     $('svgBox').innerHTML = '<div class="tw">' + drawSection(inp, r) + '</div>';
   }
+  const xs = extraRules(inp, r), fb = feedback(inp, r, xs), TAG = { good: '좋아요', warn: '주의', ask: '생각해 보기' };
+  $('fbOut').innerHTML = `<div class="card fb"><h3>피드백 <small class="hint">입력한 숫자를 규칙으로 읽은 해석이에요 (AI 아님)</small></h3><ul class="plain">` + fb.map(x => `<li><span class="fbtag ${x.t}">${TAG[x.t]}</span> ${esc(x.txt)}</li>`).join('') + '</ul></div>';
+  $('xtraOut').innerHTML = xs.map(x => `<div class="card"><h3>${esc(x.title)} <span class="pill ${x.st === 'ok' ? '' : x.st}">${esc(x.pill)}</span></h3><p>${esc(x.result)}</p><p class="hint">근거: ${esc(x.basis)} · 법조문 최신본과 조례 확인 필요</p></div>`).join('');
   $('reasons').innerHTML = [e.bcr, e.far, e.sun].map(x => `<div class="card steps"><h3>${x.title}</h3>
     <p><b>① 무엇을 계산했나</b> ${esc(x.what)}</p><p><b>② 결과</b> ${esc(x.result)}</p>
     ${x.na ? '' : `<p><b>③ 이 규정이 왜 있나</b> ${esc(x.why)}</p><p><b>④ 그래서 이 부분이 걸린다/안 걸린다</b> ${esc(x.so)}</p>`}
