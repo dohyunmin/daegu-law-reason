@@ -624,7 +624,7 @@ main.app{grid-template-columns:var(--wL) minmax(0,1fr) var(--wR);grid-template-r
   <h2>사용 기록 요약 <span class="badge gray">실사용 기록만</span></h2>
   <div id="sumOut"></div>
   <button id="btnCsv" class="sub">CSV 내보내기</button>
-  <button id="btnDel" class="sub">기록 삭제</button>
+  <button id="btnDel" class="sub">전체 삭제</button>
   <button id="btnImp" class="sub">기록 가져오기 (JSON)</button><input type="file" id="impFile" accept=".json,application/json" class="hide"> <span id="impMsg" class="hint"></span>
 </section>
 </div></dialog>
@@ -1245,6 +1245,8 @@ function renderSummary() {
       <tr><td>설명 가능? 예 / 애매 / 아니오</td><td>${yn('예')} / ${yn('애매')} / ${yn('아니오')}</td></tr></table></div>
       <p class="hint">걸린 시간은 "사용 시작~종료" 전체이고, 이해도는 본인이 매긴 점수예요.</p>`;
   }
+  if (all.length) h += `<h3>기록 목록 <small class="hint">(${all.length}건 · 줄마다 지울 수 있어요)</small></h3><div class="tw"><table><tr><th>별칭</th><th>구분</th><th>종류</th><th>시각</th><th>횟수</th><th>이해도</th><th>설명</th><th></th></tr>` +
+    all.map(r => `<tr><td>${esc(r.alias)}</td><td>${esc(r.group)}</td><td>${esc(r.mode)}</td><td>${fmtTs(r.start)}</td><td>${r.calcs}</td><td>${r.score}</td><td>${esc(r.yn)}</td><td><button class="sub" data-del="${r.id}">삭제</button></td></tr>`).join('') + '</table></div>';
   const sr = all.filter(r => r.srNote || r.srLaw || r.srExtra.length);
   if (sr.length) h += `<h3>4학년 선배 의견 (모든 기록에서 모음)</h3><ul class="plain">` +
     sr.map(r => `<li>${esc(r.alias)}: ${esc(r.srNote)} ${r.srLaw ? `[근거: ${esc(r.srLaw)}]` : ''} ${r.srExtra.length ? `[추가 필요: ${esc(r.srExtra.join(', '))}]` : ''}</li>`).join('') + '</ul>';
@@ -1921,6 +1923,11 @@ $('impFile').onchange = async e => {
 $('btnExText').onclick = () => { if (!$('myExp').value.trim()) $('myExp').value = $('exText').textContent.trim(); };
 $('btnStart').onclick = startSession; $('btnSave').onclick = saveRecord; $('btnCalc').onclick = onCalc;
 $('btnSelf').onclick = showSelfCheck; $('btnCsv').onclick = exportCsv;
+$('sumOut').onclick = e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  const rec = ld(KEY_REC, []).find(r => String(r.id) === b.dataset.del); if (!rec || !confirm(`‘${rec.alias}’ 기록 1건을 지울까요? 되돌릴 수 없어요.`)) return;
+  sv(KEY_REC, ld(KEY_REC, []).filter(r => String(r.id) !== b.dataset.del)); renderSummary();
+};
 $('btnDel').onclick = () => { if (confirm('저장된 사용 기록과 이전 계산 결과를 모두 지울까요? 되돌릴 수 없어요.')) { try { localStorage.removeItem(KEY_REC); localStorage.removeItem(KEY_PREV); } catch (e) {} renderSummary(); } };
 document.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => loadExample(Number(b.dataset.ex)));
 $('zone').onchange = zoneHint; $('perChk').onchange = renderPerFloor; $('floors').oninput = renderPerFloor;
