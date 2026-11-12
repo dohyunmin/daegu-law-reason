@@ -1245,8 +1245,8 @@ function renderSummary() {
       <tr><td>설명 가능? 예 / 애매 / 아니오</td><td>${yn('예')} / ${yn('애매')} / ${yn('아니오')}</td></tr></table></div>
       <p class="hint">걸린 시간은 "사용 시작~종료" 전체이고, 이해도는 본인이 매긴 점수예요.</p>`;
   }
-  if (all.length) h += `<h3>기록 목록 <small class="hint">(${all.length}건 · 줄마다 지울 수 있어요)</small></h3><div class="tw"><table><tr><th>별칭</th><th>구분</th><th>종류</th><th>시각</th><th>횟수</th><th>이해도</th><th>설명</th><th></th></tr>` +
-    all.map(r => `<tr><td>${esc(r.alias)}</td><td>${esc(r.group)}</td><td>${esc(r.mode)}</td><td>${fmtTs(r.start)}</td><td>${r.calcs}</td><td>${r.score}</td><td>${esc(r.yn)}</td><td><button class="sub" data-del="${r.id}">삭제</button></td></tr>`).join('') + '</table></div>';
+  if (all.length) h += `<h3>기록 목록 <small class="hint">(${all.length}건 · 줄마다 지울 수 있어요)</small></h3><div class="tw"><table><tr><th>별칭</th><th>구분</th><th>종류</th><th>날짜</th><th>걸린 시간</th><th>횟수</th><th>이해도</th><th>설명</th><th></th></tr>` +
+    all.map(r => `<tr><td>${esc(r.alias)}</td><td>${esc(r.group)}</td><td>${esc(r.mode)}</td><td>${fmtTs(r.start).slice(0, 10)}</td><td>${f(r.minutes, 1)}분</td><td>${r.calcs}</td><td>${r.score}</td><td>${esc(r.yn)}</td><td><button class="sub" data-edit="${r.id}">별칭 수정</button> <button class="sub" data-del="${r.id}">삭제</button></td></tr>`).join('') + '</table></div>';
   const sr = all.filter(r => r.srNote || r.srLaw || r.srExtra.length);
   if (sr.length) h += `<h3>4학년 선배 의견 (모든 기록에서 모음)</h3><ul class="plain">` +
     sr.map(r => `<li>${esc(r.alias)}: ${esc(r.srNote)} ${r.srLaw ? `[근거: ${esc(r.srLaw)}]` : ''} ${r.srExtra.length ? `[추가 필요: ${esc(r.srExtra.join(', '))}]` : ''}</li>`).join('') + '</ul>';
@@ -1921,11 +1921,18 @@ $('impFile').onchange = async e => {
   try { const arr = JSON.parse(await file.text()); importRecs(Array.isArray(arr) ? arr : []); } catch (err) { $('impMsg').textContent = '가져오지 못했어요: ' + err.message; }
 };
 // 대봉동 근린생활시설 테스트 3건 (스크립트로 돌린 값이라 시간은 의미 없음, 이해도·설명 가능 여부는 시나리오용) — 줄마다 삭제 가능
-const TEST_RECS = [{"id":1794412829484,"alias":"테스트-근생1","group":"기타","mode":"실사용","start":1794412829484,"end":1794412833254,"minutes":0.1,"baseline":null,"calcs":1,"score":4,"yn":"예","srNote":"","srLaw":"","srExtra":[]},{"id":1794412855245,"alias":"테스트-근생2","group":"기타","mode":"실사용","start":1794412855245,"end":1794412858592,"minutes":0.1,"baseline":null,"calcs":1,"score":3,"yn":"애매","srNote":"","srLaw":"","srExtra":[]},{"id":1794412880595,"alias":"테스트-근생3","group":"기타","mode":"실사용","start":1794412880595,"end":1794412883952,"minutes":0.1,"baseline":null,"calcs":1,"score":4,"yn":"예","srNote":"","srLaw":"","srExtra":[]}];
+const TEST_RECS = [{"id":1794412829484,"alias":"테스트-근생1","group":"기타","mode":"예시 테스트","start":1794412829484,"end":1794412833254,"minutes":0.1,"baseline":null,"calcs":1,"score":4,"yn":"예","srNote":"","srLaw":"","srExtra":[]},{"id":1794412855245,"alias":"테스트-근생2","group":"기타","mode":"예시 테스트","start":1794412855245,"end":1794412858592,"minutes":0.1,"baseline":null,"calcs":1,"score":3,"yn":"애매","srNote":"","srLaw":"","srExtra":[]},{"id":1794412880595,"alias":"테스트-근생3","group":"기타","mode":"예시 테스트","start":1794412880595,"end":1794412883952,"minutes":0.1,"baseline":null,"calcs":1,"score":4,"yn":"예","srNote":"","srLaw":"","srExtra":[]}];
 $('btnTestRec').onclick = () => { try { importRecs(TEST_RECS); } catch (err) { $('impMsg').textContent = '가져오지 못했어요: ' + err.message; } };
 $('btnStart').onclick = startSession; $('btnSave').onclick = saveRecord; $('btnCalc').onclick = onCalc;
 $('btnSelf').onclick = showSelfCheck; $('btnCsv').onclick = exportCsv;
 $('sumOut').onclick = e => {
+  const eb = e.target.closest('[data-edit]');   // 별칭만 수정 (시간·횟수·이해도·구분은 측정값이라 잠금)
+  if (eb) {
+    const all = ld(KEY_REC, []), rec = all.find(r => String(r.id) === eb.dataset.edit); if (!rec) return;
+    const v = prompt('새 별칭 (이름 대신 별칭 권장)', rec.alias);
+    if (v !== null && v.trim()) { rec.alias = v.trim().slice(0, 30); sv(KEY_REC, all); renderSummary(); }
+    return;
+  }
   const b = e.target.closest('[data-del]'); if (!b) return;
   const rec = ld(KEY_REC, []).find(r => String(r.id) === b.dataset.del); if (!rec || !confirm(`‘${rec.alias}’ 기록 1건을 지울까요? 되돌릴 수 없어요.`)) return;
   sv(KEY_REC, ld(KEY_REC, []).filter(r => String(r.id) !== b.dataset.del)); renderSummary();
